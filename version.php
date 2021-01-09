@@ -16,11 +16,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * @author Trideep Das Modak
  * @author DualCube
  * @license http://www.gnu.org/copyleft/gpl.html GNU Public License
  * @package moowoodle
- *
  */
 
 
