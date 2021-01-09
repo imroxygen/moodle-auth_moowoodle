@@ -1,6 +1,6 @@
 === MooWoodle ===
-Contributors: downtown2020, trideep_das_modak
-Tags: wordpress, moodle, wooCommerce, wordpress-moodle, wooCommerce-moodle
+Contributors: dualcube
+Tags: wordpress, moodle, woocommerce, wordpress-moodle, woocommerce-moodle
 Donate link: http://techmonastic.com/
 Requires at least: 3.0
 Tested up to: 3.8.2
