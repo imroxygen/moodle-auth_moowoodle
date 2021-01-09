@@ -16,7 +16,6 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * @author Trideep Das Modak
  * @author DualCube
  * @license http://www.gnu.org/copyleft/gpl.html GNU Public License
  * @package moowoodle
@@ -63,11 +62,6 @@ class auth_plugin_moowoodle extends auth_plugin_base {
             }
         return false;
     }
-
-    // function is_internal() {
-    //     //override if needed
-    //     return true;
-    // }
 
     function prevent_local_passwords() {
         return $this->is_internal();
