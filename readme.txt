@@ -1,9 +1,9 @@
 === MooWoodle ===
 Contributors: dualcube
 Tags: wordpress, moodle, woocommerce, wordpress-moodle, woocommerce-moodle
-Donate link: http://techmonastic.com/
+Donate link: https://dualcube.com/
 Requires at least: 3.0
-Tested up to: 3.8.2
+Tested up to: 3.9
 Requires at least PHP: 5.6
 Stable tag: 2.0
 License: GPLv2 or later
