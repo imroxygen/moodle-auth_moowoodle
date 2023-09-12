@@ -1,4 +1,11 @@
 <?php
+/**
+ *
+ * @package    auth_moowoodle_moodle_connector
+ * @author     DualCube <admin@dualcube.com>
+ * @copyright  2023 DualCube Team(https://dualcube.com)
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 defined('MOODLE_INTERNAL') || die();
 require_once($CFG->libdir.'/authlib.php');
 class auth_plugin_moowoodleconnect extends auth_plugin_base {

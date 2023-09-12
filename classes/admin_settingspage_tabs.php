@@ -14,9 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 /**
- * A tab in the plugin configuration page.
  *
- * @package    enrol_stripepaymentpro
+ * @package    auth_moowoodle_moodle_connector
  * @author     DualCube <admin@dualcube.com>
  * @copyright  2023 DualCube Team(https://dualcube.com)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
