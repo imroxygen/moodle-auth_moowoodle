@@ -18,11 +18,7 @@ $page->add(new admin_setting_configtext('auth_moowoodleconnect/wpsiteurl', get_s
 						get_string('message2','auth_moowoodleconnect','auth'),'', PARAM_RAW));
 $page->add(new admin_setting_configtext('auth_moowoodleconnect/timelimit', get_string('timelimit', 'auth_moowoodleconnect'),
 						get_string('message3','auth_moowoodleconnect','auth'),'5', PARAM_INT));
-$settings->add($page);
 
-
-// License Settings tab
-$page = new admin_settingpage('auth_moowoodleconnect_license_settings', new lang_string('moowoodle_license', 'auth_moowoodleconnect'));
 
 
 
