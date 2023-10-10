@@ -8,21 +8,16 @@
  */
 global $CFG, $USER, $SESSION, $DB;
 
-require('../../config.php');
-require_once($CFG->libdir.'/moodlelib.php');
-require_once($CFG->dirroot.'/cohort/lib.php');
-require_once($CFG->dirroot.'/group/lib.php');
-require_once($CFG->dirroot.'/course/lib.php');
-require_once($CFG->dirroot."/lib/enrollib.php");
-require_once("lib.php");
+require '../../config.php';
+require_once $CFG->libdir . '/moodlelib.php';
+require_once $CFG->dirroot . '/cohort/lib.php';
+require_once $CFG->dirroot . '/group/lib.php';
+require_once $CFG->dirroot . '/course/lib.php';
+require_once $CFG->dirroot . "/lib/enrollib.php";
 
 $SESSION->wantsurl = $CFG->wwwroot.'/';
-$secret_key = get_config('auth_moowoodleconnect','encryptkey');
-$request_url = get_config('auth_moowoodleconnect','wpsiteurl');
-
-
-
-// if (get_config('auth_moowoodleconnect', 'moowoodle_license_key_activated') == 1) {
+$secret_key = get_config('auth_moowoodle_moodle_connector', 'encryptkey');
+$request_url = get_config('auth_moowoodle_moodle_connector', 'wpsiteurl');
 
 $getdata = optional_param('passkey', '', PARAM_RAW);
 $timelimit = (integer) get_config('auth_moowoodleconnect', 'timelimit');
@@ -41,13 +36,12 @@ if(!empty($getdata)){
 		$timevalue = new DateTime("@$timestamp");
 		$diff = floatval(date_diff(date_create("now"), $timevalue)->format("%i"));
 		if ($timestamp > 0 && $diff <= $timelimit) {
-			// echo print_r($data);die;
 			if ($DB->record_exists('user', array('id' => $user_id))) {
 		        // update manually created user that has the same username but doesn't yet have the right idnumber
 		        // ensure we have the latest data
 		        $user = get_complete_user_data('id', $user_id);
 		    }
-        	$request_url .= '/wp-json/moowoodlepro/sso/';
+        	$request_url .= '/wp-json/moowoodle-pro/sso/';
         	$request_data = array(
 	            'action'					=> 'login_verify',
 	            'redirect_to'				=> $redirect_url,
@@ -60,26 +54,29 @@ if(!empty($getdata)){
 	            'moowoodle_one_time_code'	=> $getdata,
 	        );
         	$jeson_request_data = json_encode($request_data);
-			$encoded_request_data = array('moowoodle_token' => base64_encode($jeson_request_data));
 
-        	$curl = curl_init();
+        	$curl = curl_init($request_url);
+			if ($curl === false) {
+				die('Failed to initialize cURL');
+			}
 	        curl_setopt_array($curl, array(
 	            CURLOPT_RETURNTRANSFER => 1,
-	            CURLOPT_URL => $request_url,
-	            CURLOPT_TIMEOUT => 100
+	            CURLOPT_TIMEOUT => 100,
+				CURLOPT_POST => true,
+				CURLOPT_POSTFIELDS => array('moowoodle_token' => base64_encode($jeson_request_data)),
 	        ));
 			curl_setopt( $curl, CURLOPT_POST, 1 );
 	        curl_setopt( $curl, CURLOPT_POSTFIELDS, $encoded_request_data );
 	        $response = json_decode(curl_exec( $curl ),true);
-			$sskey = get_config('auth_moowoodleconnect', 'encryptkey');
+			if ($response != null) {
+				$sskey = get_config('auth_moowoodle_moodle_connector', 'encryptkey');
 	        if($response['status'] == 'success'){
 	        	if($response['moowoodle_one_time_code'] == $getdata && $response['sskey'] == md5($sskey)){
-	        		$authplugin = get_auth_plugin('moowoodleconnect'); 
+	        		$authplugin = get_auth_plugin('moowoodle_moodle_connector'); 
 					if ($authplugin->user_login($user->username, $user->password)) {
 						$user->loggedin = true;
 						$user->site     = $CFG->wwwroot;
-						complete_user_login($user); 
-						echo $USER->id;
+						complete_user_login($user);
 					}
 					if($redirect_url){
 						 $SESSION->wantsurl = $redirect_url;
@@ -89,8 +86,11 @@ if(!empty($getdata)){
 	        }
 		}
 	}
-}
-redirect($redirect_url);
+	file_put_contents("error.log", date("d/m/Y H:i:s", time()) . ": " . "\n        moowoodle error:Some one tried to login to (course id) " . $course_id . "> and user id:" . $user_id . "> & (Moodle) & " . $wp_user_id . ">(WordPress) with  time diffarence of:" . $diff . "min or more. on " . json_encode($timevalue) . " and now :" . json_encode(date_create("now")) . "\n", FILE_APPEND);
 
+}
+}
+
+redirect($redirect_url);
 
 ?>

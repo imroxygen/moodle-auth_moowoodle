@@ -7,12 +7,12 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 defined('MOODLE_INTERNAL') || die();
-require_once($CFG->libdir.'/authlib.php');
-class auth_plugin_moowoodleconnect extends auth_plugin_base {
+require_once $CFG->libdir . '/authlib.php';
+class auth_plugin_moowoodle_moodle_connector extends auth_plugin_base {
 
 	public function __construct() {
-			$this->authtype = 'moowoodleconnect';
-			$this->config = get_config('auth_moowoodleconnect');
+		$this->authtype = 'moowoodle_moodle_connector';
+		$this->config = get_config('auth_moowoodle_moodle_connector');
 	}
 
 	public function user_login ($username, $password = null) {
@@ -24,8 +24,7 @@ class auth_plugin_moowoodleconnect extends auth_plugin_base {
 		return false;
 	}
 
- 	public function can_reset_password()
-  {
+ 	public function can_reset_password() {
       return false;
   }
 

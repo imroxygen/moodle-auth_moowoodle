@@ -20,7 +20,7 @@
  * @copyright  2023 DualCube Team(https://dualcube.com)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class auth_moowoodleconnect_admin_settingspage_tabs extends admin_settingpage {
+class auth_moowoodle_moodle_connector_admin_settingspage_tabs extends admin_settingpage {
 
     /**
      * Admin settings tab
@@ -65,8 +65,8 @@ class auth_moowoodleconnect_admin_settingspage_tabs extends admin_settingpage {
 
         global $OUTPUT, $CFG, $PAGE;
 
-        $activetab = optional_param('activetab', get_config('auth_moowoodleconnect', 'activetab'), PARAM_ALPHA);
-        unset_config('activetab', 'auth_moowoodleconnect');
+        $activetab = optional_param('activetab', get_config('auth_moowoodle_moodle_connector', 'activetab'), PARAM_ALPHA);
+		unset_config('activetab', 'auth_moowoodle_moodle_connector');
 
         $context = array('tabs' => array());
         $havesetactive = false;
@@ -87,7 +87,7 @@ class auth_moowoodleconnect_admin_settingspage_tabs extends admin_settingpage {
                 'displayname' => $tab->visiblename,
                 'html' => $tab->output_html(),
                 'active' => $active,
-                'customclass' => 'moowoodleconnecttab'
+                'customclass' => 'moowoodle_moodle_connector_tab'
             );
         }
 
@@ -95,7 +95,7 @@ class auth_moowoodleconnect_admin_settingspage_tabs extends admin_settingpage {
             return '';
         }
 
-        return $OUTPUT->render_from_template('auth_moowoodleconnect/admin_setting_tabs', $context);
+        return $OUTPUT->render_from_template('auth_moowoodle_moodle_connector/admin_setting_tabs', $context);
     }
 
 }

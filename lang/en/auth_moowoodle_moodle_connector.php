@@ -8,9 +8,9 @@
  */
 $string['pluginname'] = 'MooWoodle Connect';
 $string['auth_moowoodledescription'] = 'MooWoodle Connect(WordPress Moodle Authentication)';
-$string['auth_moowoodledescription/auth_moowoodleconnect'] = 'MooWoodle Connect(WordPress Moodle Authentication)';
+$string['auth_moowoodledescription/auth_moowoodle_moodle_connector'] = 'MooWoodle Connect(WordPress Moodle Authentication)';
 $string['message'] = 'It should be same with the wordpress plugin';
-$string['key'] = 'SSO Secret Key';
+$string['key'] = 'SSO Secrate Key';
 $string['wpsiteurl'] = 'WordPress Site URL';
 $string['message2'] = 'For ex: http://your_wordpress_url/';
 $string['timelimit'] = 'Set the time limit';
