@@ -26,10 +26,6 @@ $page->add(new admin_setting_configtext('auth_moowoodle_moodle_connector/wpsiteu
 $page->add(new admin_setting_configtext('auth_moowoodle_moodle_connector/timelimit', get_string('timelimit', 'auth_moowoodle_moodle_connector'),
 	get_string('message3', 'auth_moowoodle_moodle_connector', 'auth'), '5', PARAM_INT));
 
-
-
-
 $settings->add($page);
-
 
 ?>
