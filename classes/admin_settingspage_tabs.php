@@ -22,80 +22,80 @@
  */
 class auth_moowoodle_moodle_connector_admin_settingspage_tabs extends admin_settingpage {
 
-    /**
-     * Admin settings tab
-     * @var array
-     */
-    protected $tabs = array();
+	/**
+	 * Admin settings tab
+	 * @var array
+	 */
+	protected $tabs = array();
 
-    /**
-     * Add a tab.
-     * @param admin_settingpage $tab A tab.
-     */
-    public function add_tab(admin_settingpage $tab) {
-        foreach ($tab->settings as $setting) {
-            $this->settings->{$setting->name} = $setting;
-        }
-        $this->tabs[] = $tab;
-        return true;
-    }
+	/**
+	 * Add a tab.
+	 * @param admin_settingpage $tab A tab.
+	 */
+	public function add_tab(admin_settingpage $tab) {
+		foreach ($tab->settings as $setting) {
+			$this->settings->{$setting->name} = $setting;
+		}
+		$this->tabs[] = $tab;
+		return true;
+	}
 
-    /**
-     * Add tab in tabs list
-     * @param  object $tab Admin settings tab
-     * @return object      Tabs
-     */
-    public function add($tab) {
-        return $this->add_tab($tab);
-    }
+	/**
+	 * Add tab in tabs list
+	 * @param  object $tab Admin settings tab
+	 * @return object      Tabs
+	 */
+	public function add($tab) {
+		return $this->add_tab($tab);
+	}
 
-    /**
-     * Get tabs.
-     * @return array
-     */
-    public function get_tabs() {
-        return $this->tabs;
-    }
+	/**
+	 * Get tabs.
+	 * @return array
+	 */
+	public function get_tabs() {
+		return $this->tabs;
+	}
 
-    /**
-     * Generate the HTML output.
-     * @return string
-     */
-    public function output_html() {
+	/**
+	 * Generate the HTML output.
+	 * @return string
+	 */
+	public function output_html() {
 
-        global $OUTPUT, $CFG, $PAGE;
+		global $OUTPUT, $CFG, $PAGE;
 
-        $activetab = optional_param('activetab', get_config('auth_moowoodle_moodle_connector', 'activetab'), PARAM_ALPHA);
+		$activetab = optional_param('activetab', get_config('auth_moowoodle_moodle_connector', 'activetab'), PARAM_ALPHA);
 		unset_config('activetab', 'auth_moowoodle_moodle_connector');
 
-        $context = array('tabs' => array());
-        $havesetactive = false;
+		$context = array('tabs' => array());
+		$havesetactive = false;
 
-        foreach ($this->get_tabs() as $tab) {
-            $active = false;
+		foreach ($this->get_tabs() as $tab) {
+			$active = false;
 
-            // Default to first tab it not told otherwise.
-            if (empty($activetab) && !$havesetactive) {
-                $active = true;
-                $havesetactive = true;
-            } else if ($activetab === $tab->name) {
-                $active = true;
-            }
+			// Default to first tab it not told otherwise.
+			if (empty($activetab) && !$havesetactive) {
+				$active = true;
+				$havesetactive = true;
+			} else if ($activetab === $tab->name) {
+				$active = true;
+			}
 
-            $context['tabs'][] = array(
-                'name' => $tab->name,
-                'displayname' => $tab->visiblename,
-                'html' => $tab->output_html(),
-                'active' => $active,
-                'customclass' => 'moowoodle_moodle_connector_tab'
-            );
-        }
+			$context['tabs'][] = array(
+				'name' => $tab->name,
+				'displayname' => $tab->visiblename,
+				'html' => $tab->output_html(),
+				'active' => $active,
+				'customclass' => 'moowoodle_moodle_connector_tab',
+			);
+		}
 
-        if (empty($context['tabs'])) {
-            return '';
-        }
+		if (empty($context['tabs'])) {
+			return '';
+		}
 
-        return $OUTPUT->render_from_template('auth_moowoodle_moodle_connector/admin_setting_tabs', $context);
-    }
+		return $OUTPUT->render_from_template('auth_moowoodle_moodle_connector/admin_setting_tabs', $context);
+	}
 
 }

@@ -15,34 +15,34 @@ class auth_plugin_moowoodle_moodle_connector extends auth_plugin_base {
 		$this->config = get_config('auth_moowoodle_moodle_connector');
 	}
 
-	public function user_login ($username, $password = null) {
+	public function user_login($username, $password = null) {
 		global $CFG, $DB;
-		if ($password == null || $password == '') { return false; }	
-		if ($user = $DB->get_record('user', array('username'=>$username, 'mnethostid'=>$CFG->mnet_localhost_id))) {
-						return true;
+		if ($password == null || $password == '') {return false;}
+		if ($user = $DB->get_record('user', array('username' => $username, 'mnethostid' => $CFG->mnet_localhost_id))) {
+			return true;
 		}
 		return false;
 	}
 
- 	public function can_reset_password() {
-      return false;
-  }
+	public function can_reset_password() {
+		return false;
+	}
 
 	public function can_change_password() {
 		return false;
-  }
+	}
 
-  public function change_password_url() {
-   	return;
-  }
+	public function change_password_url() {
+		return;
+	}
 
-  public function is_internal() {
+	public function is_internal() {
 		return false;
-  }
+	}
 
-  public function prevent_local_passwords() {
-    return false;
-  }
+	public function prevent_local_passwords() {
+		return false;
+	}
 
 }
 ?>
