@@ -13,16 +13,16 @@ class auth_moowoodle_user_sync_external extends external_api {
 	public static function sync_users_parameters() {
 		return new external_function_parameters(
 			array(
+				'end_id' => new external_value(PARAM_RAW, 'The Last id to send next batch of user data'),
+				'limit' => new external_value(PARAM_RAW, 'The limit to sent batch of user data'),
 			)
 		);
 	}
 
-	public static function sync_users() {
+	public static function sync_users($end_id, $limit) {
 		global $DB;
-
-		$sql = "SELECT u.id, u.email, u.username, u.password, u.firstname, u.lastname
-                FROM {user} u
-                WHERE  u.deleted = 0";
+		$limit = $limit+1;
+		$sql = "SELECT u.id, u.email, u.username, u.password, u.firstname, u.lastname FROM {user} u WHERE u.id > ".(int)$end_id." ORDER BY u.id ASC LIMIT ".$limit;
 		$users = $DB->get_records_sql($sql);
 		$response = array(
 			'status' => 'success',
