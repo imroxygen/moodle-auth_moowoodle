@@ -22,7 +22,7 @@ class auth_moowoodle_user_sync_external extends external_api {
 	public static function sync_users($end_id, $limit) {
 		global $DB;
 		$limit = $limit+1;
-		$sql = "SELECT u.id, u.email, u.username, u.password, u.firstname, u.lastname FROM {user} u WHERE u.id > ".(int)$end_id." ORDER BY u.id ASC LIMIT ".$limit;
+		$sql = "SELECT u.id, u.email, u.username, u.password, u.firstname, u.lastname FROM {user} u WHERE u.id > ".(int)$end_id." u.deleted = 0 AND ORDER BY u.id ASC LIMIT ".$limit;
 		$users = $DB->get_records_sql($sql);
 		$response = array(
 			'status' => 'success',
