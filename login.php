@@ -31,71 +31,51 @@ $timelimit = (integer) get_config('auth_moowoodle', 'timelimit');
 if ($timelimit <= 0) {
     $timelimit = 5;
 }
-if (!empty($getdata)) {
-    $data = json_decode(base64_decode($getdata), true);
-    $userid = $data['user_id'];
-    $timestamp = $data['timestamp'];
-    $redirecturl = $data['redirect_url'];
-    $wpuserid = $data['wp_user_id'];
-    $courseid = $data['course_id'];
-    $resturl = $data['verify_url'];
-    if ($timestamp) {
-        $timevalue = new DateTime("@$timestamp");
-        $diff = floatval(date_diff(date_create("now"), $timevalue)->format("%i"));
-        if ($timestamp > 0 && $diff <= $timelimit) {
-            if ($DB->record_exists('user', ['id' => $userid])) {
-                $user = get_complete_user_data('id', $userid);
-            } else {
-                redirect($redirecturl);
-            }
-            $requesturl .= $resturl;
-            $requestdata = [
-                'action' => 'login_verify',
-                'redirect_to' => $redirecturl,
-                'mdl_user_id' => $user->id,
-                'mdl_username' => $user->username,
-                'mdl_email' => $user->email,
-                'timestamp' => $timestamp,
-                'course_id' => $courseid,
-                'user_id' => $wpuserid,
-                'moowoodle_one_time_code' => $getdata,
-            ];
-            $jesonrequestdata = json_encode($requestdata);
+$data = !empty($getdata) ? json_decode(base64_decode($getdata), true) : false;
+if ($data && $data['timestamp'] && $data['timestamp'] > 0
+    && floatval(date_diff(date_create("now"), new DateTime("@{$data['timestamp']}"))->format("%i")) <= $data['timestamp']) {
+    if ($DB->record_exists('user', ['id' => $data['user_id']])) {
+        $user = get_complete_user_data('id', $data['user_id']);
+    } else {
+        redirect($redirecturl);
+    }
+    $requesturl .= $data['verify_url'];
+    $requestdata = [
+        'action' => 'login_verify',
+        'redirect_to' => $data['redirect_url'],
+        'mdl_user_id' => $user->id,
+        'mdl_username' => $user->username,
+        'mdl_email' => $user->email,
+        'timestamp' => $data['timestamp'],
+        'course_id' => $data['course_id'],
+        'user_id' => $data['wp_user_id'],
+        'moowoodle_one_time_code' => $getdata,
+    ];
+    $jesonrequestdata = json_encode($requestdata);
 
-            $curl = curl_init($requesturl);
-            if ($curl === false) {
-                die('Failed to initialize cURL');
-            }
-            curl_setopt_array($curl, [
-                CURLOPT_RETURNTRANSFER => 1,
-                CURLOPT_TIMEOUT => 100,
-                CURLOPT_POST => true,
-                CURLOPT_POSTFIELDS => ['moowoodle_token' => convert_uuencode($jesonrequestdata)],
-            ]);
-            $response = json_decode(curl_exec($curl), true);
-            if ($response != null) {
-                $sskey = get_config('auth_moowoodle', 'encryptkey');
-                if ($response['status'] == 'success') {
-                    if ($response['moowoodle_one_time_code'] == $getdata && $response['sskey'] == md5($sskey)) {
-                        $authplugin = get_auth_plugin('moowoodle');
-                        if ($authplugin->user_login($user->username, $user->password)) {
-                            $user->loggedin = true;
-                            $user->site = $CFG->wwwroot;
-                            complete_user_login($user);
-                        }
-                        if ($redirecturl) {
-                            $SESSION->wantsurl = $redirecturl;
-                        }
-                        redirect($redirecturl);
-                    }
-                }
-            }
+    $curl = curl_init($requesturl);
+    if ($curl === false) {
+        die('Failed to initialize cURL');
+    }
+    curl_setopt_array($curl, [
+        CURLOPT_RETURNTRANSFER => 1,
+        CURLOPT_TIMEOUT => 100,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => ['moowoodle_token' => convert_uuencode($jesonrequestdata)],
+    ]);
+    $response = json_decode(curl_exec($curl), true);
+        $sskey = get_config('auth_moowoodle', 'encryptkey');
+    if ($response != null && $response['status'] == 'success' && $response['moowoodle_one_time_code'] == $getdata
+        && $response['sskey'] == md5($sskey)) {
+        $authplugin = get_auth_plugin('moowoodle');
+        if ($authplugin->user_login($user->username, $user->password)) {
+            $user->loggedin = true;
+            $user->site = $CFG->wwwroot;
+            complete_user_login($user);
         }
-        $filecontent = date("d/m/Y H:i:s", time()) . ": " . "\n moowoodle error: Someone tried to login to (course id) "
-        . $courseid . "> and user id:" . $userid . "> & (Moodle) & " . $wpuserid . ">(WordPress) with time difference of:" . $diff .
-        "min or more. on " . json_encode($timevalue) . " and now :" . json_encode(date_create("now")) . "\n";
-        file_put_contents("error.log", $filecontent, FILE_APPEND);
+        if ($data['redirect_url']) {
+            $SESSION->wantsurl = $data['redirect_url'];
+        }
     }
 }
-
-redirect($redirecturl);
+redirect($data['redirect_url']);

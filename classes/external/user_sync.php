@@ -55,47 +55,34 @@ class user_sync extends external_api {
                 'status' => 'success',
                 'data' => json_encode($users),
             ];
-            return ($response);
         } else if (is_array(json_decode($limit, true)) && is_array(json_decode($endid, true))) {
             require_once($CFG->dirroot . '/user/lib.php');
             $wpuserdata = json_decode($limit, true);
             $syncsettings = json_decode($endid, true);
             $moodleuserdata = $DB->get_record('user', ['email' => $wpuserdata['email']]);
             $moodleuserid['created'] = false;
+            if(!$moodleuserdata->id)$moodleuserdata = new stdClass();
+            $moodleuserdata->email = $wpuserdata['email'];
+            if ((isset($syncsettings['sync_username']) && $syncsettings['sync_username'] == "Enable") || !$moodleuserdata->id) {
+                $moodleuserdata->username = $wpuserdata['username'];
+            }
+            if ((($wpuserdata['password'] != null && isset($syncsettings['sync_password']) || !$moodleuserdata->id)
+                    && $syncsettings['sync_password'] == "Enable")) {
+                if (strpos($wpuserdata['password'], "$2y$") === 0) {
+                    $moodleuserdata->password = $wpuserdata['password'];
+                }
+            }
+            if ((isset($syncsettings['sync_user_first_name']) && $syncsettings['sync_user_first_name'] == "Enable"
+                    && $wpuserdata['firstname'] != null) || !$moodleuserdata->id) {
+                $moodleuserdata->firstname = $wpuserdata['firstname'];
+            }
+            if ((isset($syncsettings['sync_user_last_name']) && $syncsettings['sync_user_last_name'] == "Enable"
+                    && $wpuserdata['lastname'] != null) || !$moodleuserdata->id) {
+                $moodleuserdata->lastname = $wpuserdata['lastname'];
+            }
             if ($moodleuserdata) {
-                $userid = $moodleuserdata->id;
-                $moodleuserdata->email = $wpuserdata['email'];
-                if (isset($syncsettings['sync_username']) && $syncsettings['sync_username'] == "Enable") {
-                    $moodleuserdata->username = $wpuserdata['username'];
-                }
-                if (($wpuserdata['password'] != null && isset($syncsettings['sync_password'])
-                        && $syncsettings['sync_password'] == "Enable")) {
-                    if (strpos($wpuserdata['password'], "$2y$") === 0) {
-                        $moodleuserdata->password = $wpuserdata['password'];
-                    } else {
-                        $moodleuserid['created'] = true;
-                    }
-                }
-                if (isset($syncsettings['sync_user_first_name']) && $syncsettings['sync_user_first_name'] == "Enable"
-                        && $wpuserdata['firstname'] != null) {
-                    $moodleuserdata->firstname = $wpuserdata['firstname'];
-                }
-                if (isset($syncsettings['sync_user_last_name']) && $syncsettings['sync_user_last_name'] == "Enable"
-                        && $wpuserdata['lastname'] != null) {
-                    $moodleuserdata->lastname = $wpuserdata['lastname'];
-                }
                 user_update_user($moodleuserdata, true, false);
             } else {
-                $moodleuserdata = new stdClass();
-                $moodleuserdata->email = $wpuserdata['email'];
-                $moodleuserdata->username = $wpuserdata['username'];
-                $moodleuserdata->password = $wpuserdata['password'];
-                if (strpos($wpuserdata['password'], "$2y$") !== 0) {
-                    $moodleuserid['created'] = true;
-                }
-
-                $moodleuserdata->firstname = $wpuserdata['firstname'];
-                $moodleuserdata->lastname = $wpuserdata['lastname'];
                 $moodleuserdata->auth = 'manual';
                 $moodleuserdata->lang = $wpuserdata['lang'];
                 $userid = user_create_user($moodleuserdata, true, false);
@@ -105,14 +92,13 @@ class user_sync extends external_api {
                 'status' => 'success',
                 'data' => json_encode($moodleuserid),
             ];
-            return ($response);
         } else {
             $response = [
                 'status' => 'failed',
                 'data' => json_encode('Bad Request'),
             ];
-            return ($response);
         }
+        return ($response);
     }
     public static function execute_returns(): external_single_structure {
         return new external_single_structure(

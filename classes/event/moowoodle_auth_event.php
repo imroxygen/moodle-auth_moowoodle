@@ -22,6 +22,7 @@
  */
 namespace auth_moowoodle\event;
 
+
 class moowoodle_auth_event {
 
     public static function moowoodle_user_sync_observer(\core\event\base $event) {
@@ -40,7 +41,14 @@ class moowoodle_auth_event {
         $userdataarray['username'] = $userdata->username;
         $userdataarray['password'] = $userdata->password;
         $requesturl = get_config('auth_moowoodle', 'wpsiteurl');
-        $requesturl .= '/wp-json/moowoodle-pro/user_sync/';
+        $requesturl .= '?rest_route=/moowoodle-pro';
+        $curl = curl_init($requesturl);
+        curl_setopt_array($curl, [
+            CURLOPT_RETURNTRANSFER => true,
+        ]);
+        $wp_rest_route = curl_exec($curl);
+        curl_close($curl);
+        $requesturl  = json_decode($wp_rest_route,true)['routes']['/moowoodle-pro/user_sync']['_links']['self'][0]['href'];
         $curl = curl_init($requesturl);
         if ($curl === false) {
             die('Failed to initialize cURL');
