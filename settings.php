@@ -30,7 +30,7 @@ if ($ADMIN->fulltree) {
                 'key', 'auth_moowoodle'
             ),
             get_string(
-                'message',
+                'moowoodle_plugin_message',
                 'auth_moowoodle',
                 'auth'
             ),
@@ -46,7 +46,7 @@ if ($ADMIN->fulltree) {
                 'auth_moowoodle'
             ),
             get_string(
-                'message2',
+                'wpsiteurl_message',
                 'auth_moowoodle',
                 'auth'
             ),
@@ -62,7 +62,7 @@ if ($ADMIN->fulltree) {
                 'auth_moowoodle'
             ),
             get_string(
-                'message3',
+                'timelimit_message',
                 'auth_moowoodle',
                 'auth'
             ),
