@@ -20,9 +20,14 @@
  * @copyright  2023 DualCube Team(https://dualcube.com)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-defined('MOODLE_INTERNAL') || die();
-$plugin->version = 20240021400;
-$plugin->requires = 2018050800;
-$plugin->component = 'auth_moowoodle';
-$plugin->maturity = MATURITY_STABLE;
-$plugin->release = '1.0.2 (Build: 20240021400)';
+$string['pluginname'] = 'MooWoodle Connect';
+$string['auth_moowoodledescription'] = 'MooWoodle Connect(WordPress Moodle Authentication)';
+$string['auth_moowoodledescription/auth_moowoodle'] = 'MooWoodle Connect(WordPress Moodle Authentication)';
+$string['message'] = 'It should be same with the wordpress plugin';
+$string['key'] = 'SSO Secret Key';
+$string['wpsiteurl'] = 'WordPress Site URL';
+$string['message2'] = 'For ex: http://your_wordpress_url/';
+$string['timelimit'] = 'Set the time limit';
+$string['message3'] = 'Define the duration in minutes for which the login link from the WordPress site remains active for Moodle site login.';
+$string['moowoodle_settings'] = 'MooWoodle Connect Settings';
+$string['privacy:metadata'] = 'The MooWoodle-based WordPress-authentication plugin does not store any personal data.';

@@ -14,15 +14,18 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 /**
+ * Privacy Subsystem implementation for auth_email.
  *
  * @package    auth_moowoodle
  * @author     DualCube <admin@dualcube.com>
  * @copyright  2023 DualCube Team(https://dualcube.com)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-defined('MOODLE_INTERNAL') || die();
-$plugin->version = 20240021400;
-$plugin->requires = 2018050800;
-$plugin->component = 'auth_moowoodle';
-$plugin->maturity = MATURITY_STABLE;
-$plugin->release = '1.0.2 (Build: 20240021400)';
+
+namespace auth_moowoodle\privacy;
+
+class provider implements \core_privacy\local\metadata\null_provider {
+    public static function get_reason(): string {
+        return 'privacy:metadata';
+    }
+}

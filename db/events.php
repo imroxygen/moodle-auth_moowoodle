@@ -13,26 +13,29 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
-
 /**
  *
- * @package     auth_moowoodle_moodle_connector
+ * @package     auth_moowoodle
  * @author      DualCube <admin@dualcube.com>
  * @copyright   Dualcube (https://dualcube.com)
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+defined('MOODLE_INTERNAL') || die();
 global $observers;
-$observers = array(
-	array(
-		'eventname' => '\core\event\user_created',
-		'callback' => '\auth_moowoodle_moodle_connector\event\moowoodle_auth_event::moowoodle_user_sync_observer',
-	),
-	array(
-		'eventname' => '\core\event\user_updated',
-		'callback' => '\auth_moowoodle_moodle_connector\event\moowoodle_auth_event::moowoodle_user_sync_observer',
-	),
-	array(
-		'eventname' => '\core\event\user_password_updated',
-		'callback' => '\auth_moowoodle_moodle_connector\event\moowoodle_auth_event::moowoodle_user_sync_observer',
-	),
-);
+$observers = [
+    [
+        'eventname' => '\core\event\user_created',
+        'callback' => '\auth_moowoodle\event\moowoodle_auth_event::moowoodle_user_sync_observer',
+        'internal' => false,
+    ],
+    [
+        'eventname' => '\core\event\user_updated',
+        'callback' => '\auth_moowoodle\event\moowoodle_auth_event::moowoodle_user_sync_observer',
+        'internal' => false,
+    ],
+    [
+        'eventname' => '\core\event\user_password_updated',
+        'callback' => '\auth_moowoodle\event\moowoodle_auth_event::moowoodle_user_sync_observer',
+        'internal' => false,
+    ],
+];
