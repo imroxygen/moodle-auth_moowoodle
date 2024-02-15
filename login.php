@@ -62,7 +62,12 @@ if ($data && $data['timestamp'] && $data['timestamp'] > 0
     ]);
     $response = json_decode(curl_exec($curl), true);
     $sskey = get_config('auth_moowoodle', 'encryptkey');
+<<<<<<< Updated upstream
     if ($response != null && $response['moowoodle_one_time_code'] == $getdata && $response['sskey'] == md5($sskey)) {
+=======
+    if ($response != null && $response['status'] == 'success' && $response['moowoodle_one_time_code'] == $getdata
+        && $response['sskey'] == md5($sskey)) {
+>>>>>>> Stashed changes
         $authplugin = get_auth_plugin('moowoodle');
         if ($authplugin->user_login($user->username, null)) {
             $user->loggedin = true;
