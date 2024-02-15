@@ -32,7 +32,7 @@ if ($timelimit <= 0) {
 }
 $data = !empty($getdata) ? json_decode(base64_decode($getdata), true) : false;
 if ($data && $data['timestamp'] && $data['timestamp'] > 0
-    && floatval(date_diff(date_create("now"), new DateTime("@{$data['timestamp']}"))->format("%i")) <= $data['timestamp']
+    && floatval(date_diff(date_create("now"), new DateTime("@{$data['timestamp']}"))->format("%i")) <= (integer) get_config('auth_moowoodle', 'timelimit')
     && $DB->record_exists('user', ['id' => $data['user_id']])) {
     $user = get_complete_user_data('id', $data['user_id']);
     $requesturl .= $data['verify_url'];
