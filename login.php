@@ -23,7 +23,6 @@
 
 require('../../config.php');
 $SESSION->wantsurl = $CFG->wwwroot . '/';
-$requesturl = get_config('auth_moowoodle', 'wpsiteurl');
 
 $getdata = optional_param('passkey', '', PARAM_RAW);
 $data = !empty($getdata) ? json_decode(base64_decode($getdata), true) : false;
@@ -31,7 +30,7 @@ if ($data && $data['timestamp'] && $data['timestamp'] > 0
     && floatval(date_diff(date_create("now"), new DateTime("@{$data['timestamp']}"))->format("%i")) <= (integer) get_config('auth_moowoodle', 'timelimit')
     && $DB->record_exists('user', ['id' => $data['user_id']])) {
     $user = get_complete_user_data('id', $data['user_id']);
-    $requesturl .= $data['verify_url'];
+    $requesturl = get_config('auth_moowoodle', 'wpsiteurl') . $data['verify_url'];
 
     $curl = curl_init($requesturl);
     if ($curl === false) {
