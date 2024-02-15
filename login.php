@@ -33,12 +33,9 @@ if ($timelimit <= 0) {
 }
 $data = !empty($getdata) ? json_decode(base64_decode($getdata), true) : false;
 if ($data && $data['timestamp'] && $data['timestamp'] > 0
-    && floatval(date_diff(date_create("now"), new DateTime("@{$data['timestamp']}"))->format("%i")) <= $data['timestamp']) {
-    if ($DB->record_exists('user', ['id' => $data['user_id']])) {
-        $user = get_complete_user_data('id', $data['user_id']);
-    } else {
-        redirect($redirecturl);
-    }
+    && floatval(date_diff(date_create("now"), new DateTime("@{$data['timestamp']}"))->format("%i")) <= $data['timestamp']
+    && $DB->record_exists('user', ['id' => $data['user_id']])) {
+    $user = get_complete_user_data('id', $data['user_id']);
     $requesturl .= $data['verify_url'];
     $requestdata = [
         'action' => 'login_verify',
@@ -68,7 +65,7 @@ if ($data && $data['timestamp'] && $data['timestamp'] > 0
     if ($response != null && $response['status'] == 'success' && $response['moowoodle_one_time_code'] == $getdata
         && $response['sskey'] == md5($sskey)) {
         $authplugin = get_auth_plugin('moowoodle');
-        if ($authplugin->user_login($user->username, $user->password)) {
+        if ($authplugin->user_login($user->username, null)) {
             $user->loggedin = true;
             $user->site = $CFG->wwwroot;
             complete_user_login($user);
@@ -78,4 +75,5 @@ if ($data && $data['timestamp'] && $data['timestamp'] > 0
         }
     }
 }
-redirect($data['redirect_url']);
+
+redirect($SESSION->wantsurl);

@@ -31,10 +31,7 @@ class auth_plugin_moowoodle extends auth_plugin_base {
 
     public function user_login($username, $password = null) {
         global $CFG, $DB;
-        if ($password == null || $password == '') {
-            return false;
-        }
-        if ($user = $DB->get_record('user', ['username' => $username, 'mnethostid' => $CFG->mnet_localhost_id])) {
+        if ($DB->get_record('user', ['username' => $username, 'mnethostid' => $CFG->mnet_localhost_id])) {
             return true;
         }
         return false;

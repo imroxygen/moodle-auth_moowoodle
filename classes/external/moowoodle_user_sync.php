@@ -27,7 +27,7 @@ use external_function_parameters;// use core_external\external_function_paramete
 use external_single_structure;// use core_external\external_single_structure;
 use external_value;// use core_external\external_value;
 
-class user_sync extends external_api {
+class moowoodle_user_sync extends external_api {
     public static function execute_parameters(): external_function_parameters {
         return new external_function_parameters(
             [
