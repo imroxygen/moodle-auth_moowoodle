@@ -27,6 +27,7 @@ class moowoodle_realtime_user_sync {
 
     public static function moowoodle_user_sync_observer(\core\event\base $event) {
         $userdata = get_complete_user_data('id', $event->get_data()['relateduserid']);
+        $userdataarray = [];
         $userdataarray['email'] = $userdata->email;
         if ($userdata->firstname != null) {
             $userdataarray['firstname'] = $userdata->firstname;
