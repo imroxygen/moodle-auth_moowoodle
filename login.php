@@ -1,96 +1,73 @@
 <?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 /**
  *
- * @package    auth_moowoodle_moodle_connector
+ * @package    auth_moowoodle
  * @author     DualCube <admin@dualcube.com>
  * @copyright  2023 DualCube Team(https://dualcube.com)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-global $CFG, $USER, $SESSION, $DB;
 
-require '../../config.php';
-require_once $CFG->libdir . '/moodlelib.php';
-require_once $CFG->dirroot . '/cohort/lib.php';
-require_once $CFG->dirroot . '/group/lib.php';
-require_once $CFG->dirroot . '/course/lib.php';
-require_once $CFG->dirroot . "/lib/enrollib.php";
-
+require('../../config.php');
 $SESSION->wantsurl = $CFG->wwwroot . '/';
-$secret_key = get_config('auth_moowoodle_moodle_connector', 'encryptkey');
-$request_url = get_config('auth_moowoodle_moodle_connector', 'wpsiteurl');
 
 $getdata = optional_param('passkey', '', PARAM_RAW);
-$timelimit = (integer) get_config('auth_moowoodle_moodle_connector', 'timelimit');
-if ($timelimit <= 0) {
-	$timelimit = 5;
-}
-if (!empty($getdata)) {
-	$data = json_decode(base64_decode($getdata), true);
-	$user_id = $data['user_id'];
-	$timestamp = $data['timestamp'];
-	$redirect_url = $data['redirect_url'];
-	$wp_user_id = $data['wp_user_id'];
-	$course_id = $data['course_id'];
-	if ($timestamp) {
-		$timevalue = new DateTime("@$timestamp");
-		$diff = floatval(date_diff(date_create("now"), $timevalue)->format("%i"));
-		if ($timestamp > 0 && $diff <= $timelimit) {
-			if ($DB->record_exists('user', array('id' => $user_id))) {
-				// update manually created user that has the same username but doesn't yet have the right idnumber
-		        // ensure we have the latest data
-				$user = get_complete_user_data('id', $user_id);
-			} else {
-				file_put_contents("error.log", date("d/m/Y H:i:s", time()) . ": " . "\n        moowoodle error:No such user id:" . $user_id . "\n", FILE_APPEND);die;
-				redirect($redirect_url);
-			}
-			$request_url .= '/wp-json/moowoodle-pro/sso/';
-			$request_data = array(
-				'action' => 'login_verify',
-				'redirect_to' => $redirect_url,
-				'mdl_user_id' => $user->id,
-				'mdl_username' => $user->username,
-				'mdl_email' => $user->email,
-				'timestamp' => $timestamp,
-				'course_id' => $course_id,
-				'user_id' => $wp_user_id,
-				'moowoodle_one_time_code' => $getdata,
-			);
-			$jeson_request_data = json_encode($request_data);
+$data = !empty($getdata) ? json_decode(base64_decode($getdata), true) : false;
+if ($data && $data['timestamp'] && $data['timestamp'] > 0
+    && floatval(date_diff(date_create("now"), new DateTime("@{$data['timestamp']}"))->format("%i")) <= (integer) get_config('auth_moowoodle', 'timelimit')
+    && $DB->record_exists('user', ['id' => $data['user_id']])) {
+    $user = get_complete_user_data('id', $data['user_id']);
+    $requesturl = get_config('auth_moowoodle', 'wpsiteurl') . $data['verify_url'];
 
-			$curl = curl_init($request_url);
-			if ($curl === false) {
-				die('Failed to initialize cURL');
-			}
-			curl_setopt_array($curl, array(
-				CURLOPT_RETURNTRANSFER => 1,
-				CURLOPT_TIMEOUT => 100,
-				CURLOPT_POST => true,
-				CURLOPT_POSTFIELDS => array('moowoodle_token' => base64_encode($jeson_request_data)),
-			));
-			curl_setopt( $curl, CURLOPT_POST, 1 );
-	        curl_setopt( $curl, CURLOPT_POSTFIELDS, $encoded_request_data );
-			$response = json_decode(curl_exec($curl), true);
-			if ($response != null) {
-				$sskey = get_config('auth_moowoodle_moodle_connector', 'encryptkey');
-				if ($response['status'] == 'success') {
-					if ($response['moowoodle_one_time_code'] == $getdata && $response['sskey'] == md5($sskey)) {
-						$authplugin = get_auth_plugin('moowoodle_moodle_connector');
-						if ($authplugin->user_login($user->username, $user->password)) {
-							$user->loggedin = true;
-							$user->site = $CFG->wwwroot;
-							complete_user_login($user);
-						}
-						if ($redirect_url) {
-							$SESSION->wantsurl = $redirect_url;
-						}
-						redirect($redirect_url);
-					}
-				}
-			}
-		}
-		file_put_contents("error.log", date("d/m/Y H:i:s", time()) . ": " . "\n        moowoodle error:Some one tried to login to (course id) " . $course_id . "> and user id:" . $user_id . "> & (Moodle) & " . $wp_user_id . ">(WordPress) with  time diffarence of:" . $diff . "min or more. on " . json_encode($timevalue) . " and now :" . json_encode(date_create("now")) . "\n", FILE_APPEND);
-
-	}
+    $curl = curl_init($requesturl);
+    if ($curl === false) {
+        die('Failed to initialize cURL');
+    }
+    curl_setopt_array($curl, [
+        CURLOPT_RETURNTRANSFER => 1,
+        CURLOPT_TIMEOUT => 100,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => [
+            'moowoodle_token' => convert_uuencode(
+                json_encode([
+                    'action' => 'login_verify',
+                    'redirect_to' => $data['redirect_url'],
+                    'mdl_user_id' => $user->id,
+                    'mdl_username' => $user->username,
+                    'mdl_email' => $user->email,
+                    'timestamp' => $data['timestamp'],
+                    'course_id' => $data['course_id'],
+                    'user_id' => $data['wp_user_id'],
+                    'moowoodle_one_time_code' => $getdata,
+                ])
+            )
+        ],
+    ]);
+    $response = json_decode(curl_exec($curl), true);
+    if ($response != null && $response['status'] == 'success' && $response['moowoodle_one_time_code'] == $getdata
+        && $response['sskey'] == md5(get_config('auth_moowoodle', 'encryptkey'))) {
+        if (get_auth_plugin('moowoodle')->user_login($user->username, null)) {
+            $user->loggedin = true;
+            $user->site = $CFG->wwwroot;
+            complete_user_login($user);
+        }
+        if ($data['redirect_url']) {
+            $SESSION->wantsurl = $data['redirect_url'];
+        }
+    }
 }
 
-redirect($redirect_url);
+redirect($SESSION->wantsurl);
