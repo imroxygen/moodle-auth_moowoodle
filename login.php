@@ -26,10 +26,6 @@ $SESSION->wantsurl = $CFG->wwwroot . '/';
 $requesturl = get_config('auth_moowoodle', 'wpsiteurl');
 
 $getdata = optional_param('passkey', '', PARAM_RAW);
-$timelimit = (integer) get_config('auth_moowoodle', 'timelimit');
-if ($timelimit <= 0) {
-    $timelimit = 5;
-}
 $data = !empty($getdata) ? json_decode(base64_decode($getdata), true) : false;
 if ($data && $data['timestamp'] && $data['timestamp'] > 0
     && floatval(date_diff(date_create("now"), new DateTime("@{$data['timestamp']}"))->format("%i")) <= (integer) get_config('auth_moowoodle', 'timelimit')
