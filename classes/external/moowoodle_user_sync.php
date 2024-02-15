@@ -50,10 +50,9 @@ class moowoodle_user_sync extends external_api {
                 'endid' => (int) $endid,
                 'limit' => $limit,
             ];
-            $users = $DB->get_records_sql($sql, $param);
             $response = [
                 'status' => 'success',
-                'data' => json_encode($users),
+                'data' => json_encode($DB->get_records_sql($sql, $param)),
             ];
         } else if (is_array(json_decode($limit, true)) && is_array(json_decode($endid, true))) {
             require_once($CFG->dirroot . '/user/lib.php');
@@ -86,6 +85,7 @@ class moowoodle_user_sync extends external_api {
                 $moodleuserdata->auth = 'manual';
                 $moodleuserdata->lang = $wpuserdata['lang'];
                 $userid = user_create_user($moodleuserdata, true, false);
+                $moodleuserid['created'] = true;
             }
             $moodleuserid['id'] = $userid;
             $response = [

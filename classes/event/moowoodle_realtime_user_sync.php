@@ -26,9 +26,7 @@ namespace auth_moowoodle\event;
 class moowoodle_realtime_user_sync {
 
     public static function moowoodle_user_sync_observer(\core\event\base $event) {
-        $eventdata = $event->get_data();
-        $userid = $eventdata['relateduserid'];
-        $userdata = get_complete_user_data('id', $userid);
+        $userdata = get_complete_user_data('id', $event->get_data()['relateduserid']);
         $userdataarray['email'] = $userdata->email;
         if ($userdata->firstname != null) {
             $userdataarray['firstname'] = $userdata->firstname;
@@ -40,15 +38,13 @@ class moowoodle_realtime_user_sync {
 
         $userdataarray['username'] = $userdata->username;
         $userdataarray['password'] = $userdata->password;
-        $requesturl = get_config('auth_moowoodle', 'wpsiteurl');
-        $requesturl .= '?rest_route=/moowoodle-pro';
+        $requesturl = get_config('auth_moowoodle', 'wpsiteurl') . '?rest_route=/moowoodle-pro';
         $curl = curl_init($requesturl);
         curl_setopt_array($curl, [
             CURLOPT_RETURNTRANSFER => true,
         ]);
-        $wp_rest_route = curl_exec($curl);
+        $requesturl  = json_decode(curl_exec($curl),true)['routes']['/moowoodle-pro/user_sync']['_links']['self'][0]['href'];
         curl_close($curl);
-        $requesturl  = json_decode($wp_rest_route,true)['routes']['/moowoodle-pro/user_sync']['_links']['self'][0]['href'];
         $curl = curl_init($requesturl);
         if ($curl === false) {
             die('Failed to initialize cURL');

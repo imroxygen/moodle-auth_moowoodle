@@ -23,7 +23,6 @@
 
 require('../../config.php');
 $SESSION->wantsurl = $CFG->wwwroot . '/';
-$secretkey = get_config('auth_moowoodle', 'encryptkey');
 $requesturl = get_config('auth_moowoodle', 'wpsiteurl');
 
 $getdata = optional_param('passkey', '', PARAM_RAW);
@@ -37,18 +36,6 @@ if ($data && $data['timestamp'] && $data['timestamp'] > 0
     && $DB->record_exists('user', ['id' => $data['user_id']])) {
     $user = get_complete_user_data('id', $data['user_id']);
     $requesturl .= $data['verify_url'];
-    $requestdata = [
-        'action' => 'login_verify',
-        'redirect_to' => $data['redirect_url'],
-        'mdl_user_id' => $user->id,
-        'mdl_username' => $user->username,
-        'mdl_email' => $user->email,
-        'timestamp' => $data['timestamp'],
-        'course_id' => $data['course_id'],
-        'user_id' => $data['wp_user_id'],
-        'moowoodle_one_time_code' => $getdata,
-    ];
-    $jesonrequestdata = json_encode($requestdata);
 
     $curl = curl_init($requesturl);
     if ($curl === false) {
@@ -58,18 +45,26 @@ if ($data && $data['timestamp'] && $data['timestamp'] > 0
         CURLOPT_RETURNTRANSFER => 1,
         CURLOPT_TIMEOUT => 100,
         CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => ['moowoodle_token' => convert_uuencode($jesonrequestdata)],
+        CURLOPT_POSTFIELDS => [
+            'moowoodle_token' => convert_uuencode(
+                json_encode([
+                    'action' => 'login_verify',
+                    'redirect_to' => $data['redirect_url'],
+                    'mdl_user_id' => $user->id,
+                    'mdl_username' => $user->username,
+                    'mdl_email' => $user->email,
+                    'timestamp' => $data['timestamp'],
+                    'course_id' => $data['course_id'],
+                    'user_id' => $data['wp_user_id'],
+                    'moowoodle_one_time_code' => $getdata,
+                ])
+            )
+        ],
     ]);
     $response = json_decode(curl_exec($curl), true);
-    $sskey = get_config('auth_moowoodle', 'encryptkey');
-<<<<<<< Updated upstream
-    if ($response != null && $response['moowoodle_one_time_code'] == $getdata && $response['sskey'] == md5($sskey)) {
-=======
     if ($response != null && $response['status'] == 'success' && $response['moowoodle_one_time_code'] == $getdata
-        && $response['sskey'] == md5($sskey)) {
->>>>>>> Stashed changes
-        $authplugin = get_auth_plugin('moowoodle');
-        if ($authplugin->user_login($user->username, null)) {
+        && $response['sskey'] == md5(get_config('auth_moowoodle', 'encryptkey'))) {
+        if (get_auth_plugin('moowoodle')->user_login($user->username, null)) {
             $user->loggedin = true;
             $user->site = $CFG->wwwroot;
             complete_user_login($user);
