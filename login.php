@@ -61,9 +61,8 @@ if ($data && $data['timestamp'] && $data['timestamp'] > 0
         CURLOPT_POSTFIELDS => ['moowoodle_token' => convert_uuencode($jesonrequestdata)],
     ]);
     $response = json_decode(curl_exec($curl), true);
-        $sskey = get_config('auth_moowoodle', 'encryptkey');
-    if ($response != null && $response['status'] == 'success' && $response['moowoodle_one_time_code'] == $getdata
-        && $response['sskey'] == md5($sskey)) {
+    $sskey = get_config('auth_moowoodle', 'encryptkey');
+    if ($response != null && $response['moowoodle_one_time_code'] == $getdata && $response['sskey'] == md5($sskey)) {
         $authplugin = get_auth_plugin('moowoodle');
         if ($authplugin->user_login($user->username, null)) {
             $user->loggedin = true;
