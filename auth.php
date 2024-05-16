@@ -20,15 +20,34 @@
  * @copyright  2023 DualCube Team(https://dualcube.com)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
 defined('MOODLE_INTERNAL') || die();
+
 require_once($CFG->libdir . '/authlib.php');
+
+/**
+ *
+ * @package    auth_moowoodle
+ * @author     DualCube <admin@dualcube.com>
+ * @copyright  2023 DualCube Team(https://dualcube.com)
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class auth_plugin_moowoodle extends auth_plugin_base {
 
+    /**
+     * constructor
+     */
     public function __construct() {
         $this->authtype = 'moowoodle';
         $this->config = get_config('auth_moowoodle');
     }
 
+    /**
+     * check if there is the record finding by ysername and mnet_localhost_id
+     *
+     * @param string $username
+     * @param null $password
+     */
     public function user_login($username, $password = null) {
         global $CFG, $DB;
         if ($DB->get_record('user', ['username' => $username, 'mnethostid' => $CFG->mnet_localhost_id])) {
@@ -37,22 +56,37 @@ class auth_plugin_moowoodle extends auth_plugin_base {
         return false;
     }
 
+    /**
+     * if the user can reset password
+     */
     public function can_reset_password() {
         return false;
     }
 
+    /**
+     * return if the user can change password
+     */
     public function can_change_password() {
         return false;
     }
 
+    /**
+     * return if user can change password url
+     */
     public function change_password_url() {
         return;
     }
 
+    /**
+     * return if its internal
+     */
     public function is_internal() {
         return false;
     }
 
+    /**
+     * function to prevent local password
+     */
     public function prevent_local_passwords() {
         return false;
     }

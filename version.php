@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 /**
+ * virsion defination for the plugin
  *
  * @package    auth_moowoodle
  * @author     DualCube <admin@dualcube.com>

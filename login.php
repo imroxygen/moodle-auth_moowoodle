@@ -14,7 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 /**
- *
+ * user login in moodle
+ * 
  * @package    auth_moowoodle
  * @author     DualCube <admin@dualcube.com>
  * @copyright  2023 DualCube Team(https://dualcube.com)
@@ -32,31 +33,31 @@ if ($data && $data['timestamp'] && $data['timestamp'] > 0
     $user = get_complete_user_data('id', $data['user_id']);
     $requesturl = get_config('auth_moowoodle', 'wpsiteurl') . $data['verify_url'];
 
-    $curl = curl_init($requesturl);
+    $curl = new \curl();
+
     if ($curl === false) {
         die('Failed to initialize cURL');
     }
-    curl_setopt_array($curl, [
-        CURLOPT_RETURNTRANSFER => 1,
-        CURLOPT_TIMEOUT => 100,
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => [
-            'moowoodle_token' => convert_uuencode(
-                json_encode([
-                    'action' => 'login_verify',
-                    'redirect_to' => $data['redirect_url'],
-                    'mdl_user_id' => $user->id,
-                    'mdl_username' => $user->username,
-                    'mdl_email' => $user->email,
-                    'timestamp' => $data['timestamp'],
-                    'course_id' => $data['course_id'],
-                    'user_id' => $data['wp_user_id'],
-                    'moowoodle_one_time_code' => $getdata,
-                ])
-            )
-        ],
-    ]);
-    $response = json_decode(curl_exec($curl), true);
+    $options = [
+        'RETURNTRANSFER' => 1,
+        'TIMEOUT' => 100,
+    ];
+
+    $reqdata = [
+        'action' => 'login_verify',
+        'redirect_to' => $data['redirect_url'],
+        'mdl_user_id' => $user->id,
+        'mdl_username' => $user->username,
+        'mdl_email' => $user->email,
+        'timestamp' => $data['timestamp'],
+        'course_id' => $data['course_id'],
+        'user_id' => $data['wp_user_id'],
+        'moowoodle_one_time_code' => $getdata,
+    ];
+    $reqjsondata = json_encode($reqdata);
+    $jsonresult = $curl->post($requesturl, $reqjsondata, $options);
+    
+    $response = json_decode($jsonresult, true);
     if ($response != null && $response['status'] == 'success' && $response['moowoodle_one_time_code'] == $getdata
         && $response['sskey'] == md5(get_config('auth_moowoodle', 'encryptkey'))) {
         if (get_auth_plugin('moowoodle')->user_login($user->username, null)) {
