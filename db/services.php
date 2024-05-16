@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- *
+ * Services Api
  * @package     auth_moowoodle
  * @author      DualCube <admin@dualcube.com>
  * @copyright   Dualcube (https://dualcube.com)
