@@ -13,31 +13,31 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
 /**
+ * External library function 
  *
  * @package    auth_moowoodle
  * @author     DualCube <admin@dualcube.com>
  * @copyright  2023 DualCube Team(https://dualcube.com)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-namespace auth_moowoodle\external;
-require_once("{$CFG->libdir}/externallib.php");// support for previous version of moodle 4.2
-use external_api;// use core_external\external_api;
-use external_function_parameters;// use core_external\external_function_parameters;
-use external_single_structure;// use core_external\external_single_structure;
-use external_value;// use core_external\external_value;
 
-class moowoodle_user_sync extends external_api {
-    public static function execute_parameters(): external_function_parameters {
-        return new external_function_parameters(
+namespace auth_moowoodle\external;
+
+require_once("{$CFG->libdir}/externallib.php");
+
+class moowoodle_user extends \external_api {
+    public static function auth_moowoodle_get_users_parameters(): \external_function_parameters {
+        return new \external_function_parameters(
             [
-                'end_id' => new external_value(PARAM_RAW, 'The Last id to send next batch of user data'),
-                'limit' => new external_value(PARAM_RAW, 'The limit to sent batch of user data'),
+                'end_id' => new \external_value( PARAM_RAW, 'The Last id to send next batch of user data' ),
+                'limit'  => new \external_value( PARAM_RAW, 'The limit to sent batch of user data' ),
             ]
         );
     }
 
-    public static function execute($endid, $limit) {
+    public static function auth_moowoodle_get_users($endid, $limit) {
         global $DB, $CFG;
         if (is_numeric($limit) && is_numeric($endid)) {
             $limit = (int) $limit + 1;
@@ -54,13 +54,42 @@ class moowoodle_user_sync extends external_api {
                 'status' => 'success',
                 'data' => json_encode($DB->get_records_sql($sql, $param)),
             ];
-        } else if (is_array(json_decode($limit, true)) && is_array(json_decode($endid, true))) {
+        } else {
+            $response = [
+                'status' => 'failed',
+                'data' => json_encode('Bad Request'),
+            ];
+        }
+        return ($response);
+    }
+    
+    public static function auth_moowoodle_get_users_returns(): \external_single_structure {
+        return new \external_single_structure(
+            [
+                'status' => new \external_value(PARAM_RAW, 'status: success if success'),
+                'data'   => new \external_value(PARAM_RAW, 'users: all user data'),
+            ]
+        );
+    }
+
+    public static function auth_moowoodle_user_sync_parameters(): \external_function_parameters {
+        return new \external_function_parameters(
+            [
+                'end_id' => new \external_value( PARAM_RAW, 'The Last id to send next batch of user data' ),
+                'limit'  => new \external_value( PARAM_RAW, 'The limit to sent batch of user data' ),
+            ]
+        );
+    }
+
+    public static function auth_moowoodle_user_sync($endid, $limit) {
+        global $DB, $CFG;
+        if (is_array(json_decode($limit, true)) && is_array(json_decode($endid, true))) {
             require_once($CFG->dirroot . '/user/lib.php');
             $wpuserdata = json_decode($limit, true);
             $syncsettings = json_decode($endid, true);
             $moodleuserdata = $DB->get_record('user', ['email' => $wpuserdata['email']]);
             $moodleuserid['created'] = false;
-            if(!$moodleuserdata->id)$moodleuserdata = new stdClass();
+            if(!$moodleuserdata->id)$moodleuserdata = new \stdClass();
             $moodleuserdata->email = $wpuserdata['email'];
             if ((isset($syncsettings['sync_username']) && $syncsettings['sync_username'] == "Enable") || !$moodleuserdata->id) {
                 $moodleuserdata->username = $wpuserdata['username'];
@@ -100,11 +129,12 @@ class moowoodle_user_sync extends external_api {
         }
         return ($response);
     }
-    public static function execute_returns(): external_single_structure {
-        return new external_single_structure(
+
+    public static function auth_moowoodle_user_sync_returns(): \external_single_structure {
+        return new \external_single_structure(
             [
-                'status' => new external_value(PARAM_RAW, 'status: success if success'),
-                'data' => new external_value(PARAM_RAW, 'users: all user data'),
+                'status' => new \external_value(PARAM_RAW, 'status: success if success'),
+                'data'   => new \external_value(PARAM_RAW, 'moode user id'),
             ]
         );
     }

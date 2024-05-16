@@ -13,6 +13,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
 /**
  *
  * @package     auth_moowoodle
@@ -20,12 +21,24 @@
  * @copyright   Dualcube (https://dualcube.com)
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-defined('MOODLE_INTERNAL') || die();
+
+defined( 'MOODLE_INTERNAL' ) || die();
+
 $functions = [
+    'auth_moowoodle_get_users' => [
+        'classpath'     => 'auth_moowoodle\externallib.php',
+        'classname'     => 'moowoodle_user',
+        'methodname'    => 'auth_moowoodle_get_users',
+        'description'   => 'Get user data',
+        'type'          => 'write',
+        'capabilities'  => 'moodle/user:create,moodle/user:update',
+    ],
     'auth_moowoodle_user_sync' => [
-        'classname' => 'auth_moowoodle\external\moowoodle_user_sync',
-        'description' => 'Sync user data with WordPress or external source',
-        'type' => 'write',
-        'capabilities' => 'moodle/user:create,moodle/user:update',
+        'classpath'     => 'auth_moowoodle\externallib.php',
+        'classname'     => 'moowoodle_user',
+        'methodname'    => 'auth_moowoodle_user_sync',
+        'description'   => 'Sync user data with WordPress or external source',
+        'type'          => 'write',
+        'capabilities'  => 'moodle/user:create,moodle/user:update',
     ],
 ];
