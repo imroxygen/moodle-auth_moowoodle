@@ -14,56 +14,76 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 /**
+ * Sync wordpress and moodle
  *
  * @package    auth_moowoodle
  * @author     DualCube <admin@dualcube.com>
  * @copyright  2023 DualCube Team(https://dualcube.com)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
 namespace auth_moowoodle\event;
 
+defined( 'MOODLE_INTERNAL' ) || die();
 
+require_once( __DIR__ . '/../../externallib.php' );
+require_once ( $CFG->libdir . '/filelib.php' );
+
+/**
+ * Sinc wodrpres with moodle if smothing changed in moodle
+ * @package    auth_moowoodle
+ * @author     DualCube <admin@dualcube.com>
+ * @copyright  2023 DualCube Team(https://dualcube.com)
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class moowoodle_realtime_user_sync {
 
-    public static function moowoodle_user_sync_observer(\core\event\base $event) {
-        $userdata = get_complete_user_data('id', $event->get_data()['relateduserid']);
+    /**
+     * moodle user sync for event in moodle
+     * @param \core\event\base $event
+     */
+    public static function moowoodle_user_sync_observer( \core\event\base $event ) {
+        $userdata = get_complete_user_data( 'id', $event->get_data()[ 'relateduserid' ] );
+        
+        $obj = new \auth_moowoodle_external();
+        $obj->auth_moowoodle_get_users( 0, 10 );
+        
         $userdataarray = [];
-        $userdataarray['email'] = $userdata->email;
-        if ($userdata->firstname != null) {
-            $userdataarray['firstname'] = $userdata->firstname;
+
+        // Get the user data
+        $userdataarray[ 'email' ]    = $userdata->email;
+        $userdataarray[ 'username' ] = $userdata->username;
+        $userdataarray[ 'password' ] = $userdata->password;
+        
+        // Get the user first name
+        if ( $userdata->firstname != null ) {
+            $userdataarray[ 'firstname' ] = $userdata->firstname;
         }
 
-        if ($userdata->lastname != null) {
-            $userdataarray['lastname'] = $userdata->lastname;
+        // Get the user last name
+        if ( $userdata->lastname != null ) {
+            $userdataarray[ 'lastname' ] = $userdata->lastname;
         }
 
-        $userdataarray['username'] = $userdata->username;
-        $userdataarray['password'] = $userdata->password;
-        $requesturl = get_config('auth_moowoodle', 'wpsiteurl') . '?rest_route=/moowoodle-pro';
-        $curl = curl_init($requesturl);
-        curl_setopt_array($curl, [
-            CURLOPT_RETURNTRANSFER => true,
-        ]);
-        $requesturl  = json_decode(curl_exec($curl),true)['routes']['/moowoodle-pro/user_sync']['_links']['self'][0]['href'];
-        curl_close($curl);
-        $curl = curl_init($requesturl);
-        if ($curl === false) {
-            die('Failed to initialize cURL');
+        $requesturl = get_config( 'auth_moowoodle', 'wpsiteurl' ) . '/?rest_route=/moowoodle/v1/user-sync';
+
+        $options = [
+            'RETURNTRANSFER' => true,
+            'TIMEOUT'        => 100,
+        ];
+
+        // $jsonuserdata = json_encode($userdataarray);
+
+        $curl = new \curl();
+        
+        if ( $curl === false ) {
+            die( 'Failed to initialize cURL' );
         }
 
-        curl_setopt_array($curl, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => 100,
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => ['moodle_user_data' => json_encode([$userdataarray])],
-        ]);
-
-        $response = curl_exec($curl);
-        if ($response === false) {
-            die('Curl error: ' . curl_error($curl));
+        $response = $curl->post( $requesturl, $userdataarray, $options );
+        
+        if ( $response === false ) {
+            die( 'Curl error: ' );
         }
-
-        curl_close($curl);
     }
-
 }

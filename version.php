@@ -14,14 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 /**
+ * virsion defination for the plugin
  *
  * @package    auth_moowoodle
  * @author     DualCube <admin@dualcube.com>
  * @copyright  2023 DualCube Team(https://dualcube.com)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
 defined('MOODLE_INTERNAL') || die();
-$plugin->version = 20240021500;
+
+$plugin->version = 20240021509;
 $plugin->requires = 2019111800;
 $plugin->component = 'auth_moowoodle';
 $plugin->maturity = MATURITY_STABLE;
