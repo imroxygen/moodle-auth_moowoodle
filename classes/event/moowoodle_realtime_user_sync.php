@@ -81,9 +81,5 @@ class moowoodle_realtime_user_sync {
         }
 
         $response = $curl->post( $requesturl, $userdataarray, $options );
-        
-        if ( $response === false ) {
-            die( 'Curl error: ' );
-        }
     }
 }

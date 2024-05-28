@@ -43,6 +43,7 @@ class auth_moowoodle_external extends core_external\external_api {
             [
                 'endid'  => new core_external\external_value( PARAM_RAW, 'The Last id to send next batch of user data' ),
                 'limit'  => new core_external\external_value( PARAM_RAW, 'The limit to sent batch of user data' ),
+                'roles'  => new core_external\external_value( PARAM_RAW, 'The roll ids, comma seperated string of roll ids' ),
             ]
         );
     }
@@ -52,22 +53,31 @@ class auth_moowoodle_external extends core_external\external_api {
      * @param int $endid
      * @param int $limit
      */
-    public static function auth_moowoodle_get_users($endid, $limit) {
+    public static function auth_moowoodle_get_users($endid, $limit, $roles) {
         global $DB, $CFG;
         if (is_numeric($limit) && is_numeric($endid)) {
             $limit = (int) $limit + 1;
             $sql = "SELECT u.id, u.email, u.username, u.password, u.firstname, u.lastname
                       FROM {user} u
-                     WHERE u.id > :endid AND u.deleted = 0
+                      JOIN {role_assignments} ra ON u.id = ra.userid
+                     WHERE u.id > :endid AND u.deleted = 0 AND ra.roleid IN ( " . $roles . " )
                   ORDER BY u.id ASC";
             $param = [
                 'endid' => (int) $endid,
             ];
 
-            $response = [
-                'status' => 'success',
-                'data' => json_encode($DB->get_records_sql($sql, $param, 0, $limit)),
-            ];
+            if ( $limit <= 0 ) {
+                $response = [
+                    'status' => 'success',
+                    'data' => json_encode( $DB->get_records_sql( $sql, $param ) ),
+                ];
+            } else {
+                $response = [
+                    'status' => 'success',
+                    'data' => json_encode($DB->get_records_sql($sql, $param, 0, $limit)),
+                ];
+            }
+
         } else {
             $response = [
                 'status' => 'failed',
@@ -105,6 +115,8 @@ class auth_moowoodle_external extends core_external\external_api {
 
     /**
      * update user in moodle if something changed in wordpress
+     * create a new user if user not present
+     * 
      * @param object $setting (json object)
      * @param object $userdata (json object)
      * @return  array
@@ -154,7 +166,6 @@ class auth_moowoodle_external extends core_external\external_api {
                 $userid = $moodleuserdata->id;
             } else {
                 $moodleuserdata->auth = 'manual';
-                $moodleuserdata->lang = $wpuserdata[ 'lang' ];
                 $userid = user_create_user( $moodleuserdata, $updatepassword, false );
                 $response[ 'created' ] = true;
             }
