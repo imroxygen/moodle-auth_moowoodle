@@ -128,30 +128,33 @@ class auth_moowoodle_external extends \external_api {
                 $moodleuserdata = new stdClass();
             }
             $moodleuserdata->email = $wpuserdata[ 'email' ];
-            if ( isset( $syncsettings[ 'username' ] ) || ! $moodleuserdata->id ) {
+            if ( in_array( 'username', $syncsettings ) || ! $moodleuserdata->id ) {
                 $moodleuserdata->username = $wpuserdata[ 'username' ];
             }
             $updatepassword = false;
-            if ( isset( $syncsettings[ 'sync_password' ] ) && $wpuserdata[ 'password' ] != null || ! $moodleuserdata->id ) {
-                if ( strpos( $wpuserdata[ 'password' ], "$2y$" ) === 0 ) {
+            if ( in_array( 'password', $syncsettings ) && $wpuserdata[ 'password' ] != null || ! $moodleuserdata->id ) {
+                
+                if ( strpos( $wpuserdata[ 'password' ], '$6$rounds=' ) === 0 ) {
                     $moodleuserdata->password = $wpuserdata[ 'password' ];
-                    $updatepassword = true;
                 }
             }
-            if ( isset( $syncsettings[ 'firstname' ] ) && $wpuserdata[ 'firstname' ] != null || ! $moodleuserdata->id ) {
+            if ( in_array( 'firstname', $syncsettings ) && $wpuserdata[ 'firstname' ] != null || ! $moodleuserdata->id ) {
                 $moodleuserdata->firstname = $wpuserdata[ 'firstname' ];
             }
-            if ( isset( $syncsettings[ 'lastname' ] ) && $wpuserdata[ 'lastname' ] != null || ! $moodleuserdata->id ) {
+            if ( in_array( 'lastname', $syncsettings ) && $wpuserdata[ 'lastname' ] != null || ! $moodleuserdata->id ) {
                 $moodleuserdata->lastname = $wpuserdata[ 'lastname' ];
             }
             if ( $moodleuserdata->id ) {
-                user_update_user( $moodleuserdata, $updatepassword, false );
+                user_update_user( $moodleuserdata, false, false );
                 $userid = $moodleuserdata->id;
             } else {
-                $moodleuserdata->auth = 'manual';
-                $userid = user_create_user( $moodleuserdata, $updatepassword, false );
+                // $moodleuserdata->auth = 'manual';
+                $userid = user_create_user( $moodleuserdata, false, false );
                 $response[ 'created' ] = true;
             }
+
+            // Update the password
+
             $response[ 'id' ] = $userid;
             $response = [
                 'status' => 'success',

@@ -45,6 +45,8 @@ class moowoodle_realtime_user_sync {
     public static function moowoodle_user_sync_observer( \core\event\base $event ) {
         $userdata = get_complete_user_data( 'id', $event->get_data()[ 'relateduserid' ] );
         
+        // file_put_contents('C:\xampp\htdocs\moodle-2\auth\moowoodle\log.txt', var_export( $syncsettings , true ), FILE_APPEND );
+        
         $obj = new \auth_moowoodle_external();
         $obj->auth_moowoodle_get_users( 0, 10 );
         
@@ -71,8 +73,6 @@ class moowoodle_realtime_user_sync {
             'RETURNTRANSFER' => true,
             'TIMEOUT'        => 100,
         ];
-
-        // $jsonuserdata = json_encode($userdataarray);
 
         $curl = new \curl();
         
