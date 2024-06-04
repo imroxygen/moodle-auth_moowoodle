@@ -24,7 +24,7 @@
 
 require_once ( '../../config.php' );
 require_once ( $CFG->libdir . '/filelib.php' );
-
+// file_put_contents( 'C:/xampp\htdocs\moodle-2\auth\moowoodle\temp.txt', var_export( "hellloooo", true) . '\n', FILE_APPEND );
 $SESSION->wantsurl = $CFG->wwwroot . '/';
 
 $passkey = optional_param( 'passkey', '', PARAM_RAW );
@@ -76,21 +76,24 @@ if ( $passkey ) {
                 'TIMEOUT'        => 100,
             ]
         );
-
+        
         $response = json_decode( $response, true );
         
         if ( $response
-            && $response[ 'status' ] == 'success'
-            && $response[ 'moowoodle_one_time_code' ] == $passkey
-            && $response[ 'sskey' ] == md5( get_config( 'auth_moowoodle', 'encryptkey' ) )
+        && $response[ 'status' ] == 'success'
+        && $response[ 'moowoodle_one_time_code' ] == $passkey
+        && $response[ 'sskey' ] == md5( get_config( 'auth_moowoodle', 'encryptkey' ) )
         ) {
             $user->loggedin = true;
             $user->site = $CFG->wwwroot;
+            unset_user_preference( 'auth_forcepasswordchange', $user );
             complete_user_login($user);
+        } else {
+            throw new moodle_exception( 'Unauthorized access' );
         }
 
         if ( $requestdata[ 'redirect_url' ] ) {
-            $SESSION->wantsurl = $data[ 'redirect_url' ];
+            $SESSION->wantsurl = $requestdata[ 'redirect_url' ];
         }
     }
 }
