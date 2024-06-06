@@ -24,13 +24,13 @@
 
 namespace auth_moowoodle\event;
 
-defined('MOODLE_INTERNAL') || die();
+defined( 'MOODLE_INTERNAL' ) || die();
 
-require_once(__DIR__ . '/../../externallib.php');
+require_once( __DIR__ . '/../../externallib.php' );
+require_once ( $CFG->libdir . '/filelib.php' );
 
 /**
  * Sinc wodrpres with moodle if smothing changed in moodle
- *
  * @package    auth_moowoodle
  * @author     DualCube <admin@dualcube.com>
  * @copyright  2023 DualCube Team(https://dualcube.com)
@@ -40,42 +40,41 @@ class moowoodle_realtime_user_sync {
 
     /**
      * moodle user sync for event in moodle
-     *
      * @param \core\event\base $event
      */
-    public static function moowoodle_user_sync_observer(\core\event\base $event) {
-        $userdata = get_complete_user_data('id', $event->get_data()['relateduserid']);
-        //file_put_contents( 'C:\xampp\htdocs\moodle4.4\auth\moowoodle' . "/error.log", date("d/m/Y H:i:s", time()) . ":orders: : " . var_export($userdata, true) . "\n", FILE_APPEND);
-        $obj = new \auth_moowoodle_external();
-        $obj->auth_moowoodle_get_users(0, 10);
+    public static function moowoodle_user_sync_observer( \core\event\base $event ) {
+        $userdata = get_complete_user_data( 'id', $event->get_data()[ 'relateduserid' ] );
+                
         $userdataarray = [];
-        $userdataarray['email'] = $userdata->email;
-        if ($userdata->firstname != null) {
-            $userdataarray['firstname'] = $userdata->firstname;
+
+        // Get the user data
+        $userdataarray[ 'email' ]    = $userdata->email;
+        $userdataarray[ 'username' ] = $userdata->username;
+        $userdataarray[ 'password' ] = $userdata->password;
+        
+        // Get the user first name
+        if ( $userdata->firstname != null ) {
+            $userdataarray[ 'firstname' ] = $userdata->firstname;
         }
 
-        if ($userdata->lastname != null) {
-            $userdataarray['lastname'] = $userdata->lastname;
+        // Get the user last name
+        if ( $userdata->lastname != null ) {
+            $userdataarray[ 'lastname' ] = $userdata->lastname;
         }
 
-        $userdataarray['username'] = $userdata->username;
-        $userdataarray['password'] = $userdata->password;
-        $requesturl  = get_config('auth_mooodle', 'wpsiteurl') . 'moowoodle/user_sync';
+        $requesturl = get_config( 'auth_moowoodle', 'wpsiteurl' ) . '/?rest_route=/moowoodle/v1/user-sync';
+
         $options = [
             'RETURNTRANSFER' => true,
-            'TIMEOUT' => 100,
+            'TIMEOUT'        => 100,
         ];
-        $jsonuserdata = json_encode($userdataarray);
+
         $curl = new \curl();
-        if ($curl === false) {
-            die('Failed to initialize cURL');
+        
+        if ( $curl === false ) {
+            die( 'Failed to initialize cURL' );
         }
 
-        $response = $curl->post($requesturl, $jsonuserdata, $options);
-        if ($response === false) {
-            die('Curl error: ');
-        }
-
+        $response = $curl->post( $requesturl, $userdataarray, $options );
     }
-
 }

@@ -13,7 +13,6 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
-
 /**
  * Services Api
  * @package     auth_moowoodle
@@ -26,16 +25,17 @@ defined( 'MOODLE_INTERNAL' ) || die();
 
 $functions = [
     'auth_moowoodle_get_users' => [
-        'classpath'     => 'auth_moowoodle\externallib.php',
-        'classname'     => 'moowoodle_user',
+        'classpath'     => 'auth/moowoodle/externallib.php',
+        'classname'     => 'auth_moowoodle_external',
         'methodname'    => 'auth_moowoodle_get_users',
         'description'   => 'Get user data',
         'type'          => 'write',
         'capabilities'  => 'moodle/user:create,moodle/user:update',
     ],
+
     'auth_moowoodle_user_sync' => [
-        'classpath'     => 'auth_moowoodle\externallib.php',
-        'classname'     => 'moowoodle_user',
+        'classpath'     => 'auth/moowoodle/externallib.php',
+        'classname'     => 'auth_moowoodle_external',
         'methodname'    => 'auth_moowoodle_user_sync',
         'description'   => 'Sync user data with WordPress or external source',
         'type'          => 'write',
