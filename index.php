@@ -24,7 +24,6 @@
 
 require_once ( '../../config.php' );
 require_once ( $CFG->libdir . '/filelib.php' );
-
 $SESSION->wantsurl = $CFG->wwwroot . '/';
 
 $passkey = optional_param( 'passkey', '', PARAM_RAW );
