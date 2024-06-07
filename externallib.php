@@ -144,16 +144,17 @@ class auth_moowoodle_external extends \external_api {
             if ( in_array( 'lastname', $syncsettings ) && $wpuserdata[ 'lastname' ] != null || ! $moodleuserdata->id ) {
                 $moodleuserdata->lastname = $wpuserdata[ 'lastname' ];
             }
+
+            $moodleuserdata->confirmed  = true;
+            $moodleuserdata->mnethostid = $CFG->mnet_localhost_id;
+
             if ( $moodleuserdata->id ) {
                 user_update_user( $moodleuserdata, false, false );
                 $userid = $moodleuserdata->id;
             } else {
-                // $moodleuserdata->auth = 'manual';
                 $userid = user_create_user( $moodleuserdata, false, false );
                 $response[ 'created' ] = true;
             }
-
-            // Update the password
 
             $response[ 'id' ] = $userid;
             $response = [
