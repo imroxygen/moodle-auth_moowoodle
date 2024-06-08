@@ -22,8 +22,6 @@
  */
 
 $string['pluginname'] = 'MooWoodle Connect';
-$string['auth_moowoodledescription'] = 'MooWoodle connect(wordPress moodle authentication)';
-$string['auth_moowoodledescription/auth_moowoodle'] = 'Moowoodle connect(wordPress woodle authentication)';
 $string['moowoodle_plugin_message'] = 'It should be same with the wordpress plugin';
 $string['key'] = 'SSO secret Key';
 $string['wpsiteurl'] = 'Wordpress Site URL';

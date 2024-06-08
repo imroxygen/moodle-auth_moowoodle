@@ -54,7 +54,7 @@ class auth_moowoodle_external extends \external_api {
      * @param int $limit
      */
     public static function auth_moowoodle_get_users($endid, $limit, $roles) {
-        global $DB, $CFG;
+        global $DB;
         if (is_numeric($limit) && is_numeric($endid)) {
             $limit = (int) $limit + 1;
             $sql = "SELECT u.id, u.email, u.username, u.password, u.firstname, u.lastname

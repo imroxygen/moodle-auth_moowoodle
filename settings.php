@@ -64,7 +64,7 @@ if ($ADMIN->fulltree) {
                 'timelimit_message',
                 'auth_moowoodle'
             ),
-            '5',
+            '1',
             PARAM_INT
         )
     );
