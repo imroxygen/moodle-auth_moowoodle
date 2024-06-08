@@ -36,14 +36,11 @@ if ( $passkey ) {
     $timestamp = $requestdata[ 'timestamp' ];
 
     // Calculate time difference.
-    $timedif = date_diff(
-        date_create( "now" ),
-        new DateTime( "@{$timestamp}" )
-    )->format( "%i" );
+    $timedif = time() - $timestamp;
 
     $userexist = $DB->record_exists( 'user', [ 'id' => $requestdata[ 'user_id' ] ] );
     
-    if ( $timedif < get_config( 'auth_moowoodle', 'timelimit' ) && $userexist ) {
+    if ( $timedif < get_config( 'auth_moowoodle', 'timelimit' ) * 60000 && $userexist ) {
 
         // Get the user data
         $user = get_complete_user_data( 'id', $requestdata[ 'user_id' ] );
@@ -79,16 +76,18 @@ if ( $passkey ) {
         $response = json_decode( $response, true );
         
         if ( $response
-        && $response[ 'status' ] == 'success'
-        && $response[ 'moowoodle_one_time_code' ] == $passkey
-        && $response[ 'sskey' ] == md5( get_config( 'auth_moowoodle', 'encryptkey' ) )
+            && $response[ 'status' ] == 'success'
+            && $response[ 'moowoodle_one_time_code' ] == $passkey
+            && $response[ 'sskey' ] == md5( get_config( 'auth_moowoodle', 'encryptkey' ) )
         ) {
             $user->loggedin = true;
             $user->site = $CFG->wwwroot;
             unset_user_preference( 'auth_forcepasswordchange', $user );
             complete_user_login($user);
-        } else {
+        } else if ( $response[ 'status' ] == 'unauthorized' ) {
             throw new moodle_exception( 'Unauthorized access' );
+        } else {
+        	throw new moodle_exception( $response );
         }
 
         if ( $requestdata[ 'redirect_url' ] ) {
