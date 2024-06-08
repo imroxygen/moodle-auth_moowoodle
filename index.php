@@ -87,7 +87,7 @@ if ( $passkey ) {
         } else if ( $response[ 'status' ] == 'unauthorized' ) {
             throw new moodle_exception( 'Unauthorized access' );
         } else {
-        	throw new moodle_exception( $response );
+        	throw new moodle_exception( $curl->error );
         }
 
         if ( $requestdata[ 'redirect_url' ] ) {
