@@ -20,22 +20,25 @@
  * @copyright   Dualcube (https://dualcube.com)
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
 defined('MOODLE_INTERNAL') || die();
+
 global $observers;
+
 $observers = [
     [
         'eventname' => '\core\event\user_created',
-        'callback' => '\auth_moowoodle\event\moowoodle_realtime_user_sync::moowoodle_user_sync_observer',
-        'internal' => false,
+        'callback'  => '\auth_moowoodle\event\moowoodle_realtime_user_sync::moowoodle_user_sync_observer',
+        'internal'  => false,
     ],
     [
         'eventname' => '\core\event\user_updated',
-        'callback' => '\auth_moowoodle\event\moowoodle_realtime_user_sync::moowoodle_user_sync_observer',
-        'internal' => false,
+        'callback'  => '\auth_moowoodle\event\moowoodle_realtime_user_sync::moowoodle_user_sync_observer',
+        'internal'  => false,
     ],
     [
         'eventname' => '\core\event\user_password_updated',
-        'callback' => '\auth_moowoodle\event\moowoodle_realtime_user_sync::moowoodle_user_sync_observer',
-        'internal' => false,
+        'callback'  => '\auth_moowoodle\event\moowoodle_realtime_user_sync::moowoodle_user_sync_observer',
+        'internal'  => false,
     ],
 ];
