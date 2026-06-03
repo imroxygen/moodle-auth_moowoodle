@@ -62,6 +62,10 @@ class moowoodle_realtime_user_sync {
             $userdataarray[ 'lastname' ] = $userdata->lastname;
         }
 
+        $passkey = get_config( 'auth_moowoodle', 'encryptkey' );
+        
+        $userdataarray[ 'passkey' ] = $passkey;
+
         $requesturl = get_config( 'auth_moowoodle', 'wpsiteurl' ) . '/?rest_route=/moowoodle/v1/user-sync';
 
         $options = [
