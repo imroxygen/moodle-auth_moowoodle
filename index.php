@@ -24,6 +24,7 @@
 
 require_once ( '../../config.php' );
 require_once ( $CFG->libdir . '/filelib.php' );
+
 $SESSION->wantsurl = $CFG->wwwroot . '/';
 
 $passkey = optional_param( 'passkey', '', PARAM_RAW );
@@ -33,24 +34,23 @@ if ( $passkey ) {
     $requestdata = json_decode( $requestdata, true );
 
     // Get timestamp.
-    $timestamp = $requestdata[ 'timestamp' ];
+    $timestamp = $requestdata['timestamp'];
 
     // Calculate time difference.
     $timedif = time() - $timestamp;
 
-    $userexist = $DB->record_exists( 'user', [ 'id' => $requestdata[ 'user_id' ] ] );
-    
-    if ( $timedif < get_config( 'auth_moowoodle', 'timelimit' ) * 60 && $userexist ) {
+    $userexist = $DB->record_exists('user', ['id' => $requestdata['user_id']]);
 
-        // Get the user data
-        $user = get_complete_user_data( 'id', $requestdata[ 'user_id' ] );
-        
-        // Get wordpress requset url
-        $requesturl = get_config( 'auth_moowoodle', 'wpsiteurl' ) . '/?rest_route=/moowoodle/v1/sso';
+    if ( $timedif >= 0 && $timedif < get_config('auth_moowoodle', 'timelimit') * 60 && $userexist ) {
+
+        $user = get_complete_user_data( 'id', $requestdata['user_id'] );
+
+        // Get wordpress request url.
+        $requesturl = get_config('auth_moowoodle', 'wpsiteurl') . '/?rest_route=/moowoodle/v1/sso';
 
         $curl = new curl();
 
-        // Prepare request data
+        // Prepare request data.
         $reqdata = [
             'action'        => 'login_verify',
             'redirect_to'   => $requestdata['redirect_url'],
@@ -72,36 +72,38 @@ if ( $passkey ) {
                 'TIMEOUT'        => 100,
             ]
         );
-        
-        $response = json_decode( $response, true );
+
+        $response = json_decode($response, true);
 
         if ( ! $response ) {
-            throw new moodle_exception( $curl->error );
+            throw new moodle_exception($curl->error);
         }
 
-        if ( $response[ 'status' ] == 'unauthorized' ) {
-            throw new moodle_exception( 'Unauthorized access, contact with site admin.' );
+        if ( $response['status'] == 'unauthorized' ) {
+            throw new moodle_exception('Unauthorized access, contact with site admin.');
         }
 
-        if ( $response[ 'moowoodle_one_time_code' ] != $passkey ) {
-            throw new moodle_exception( 'Unauthorized access, one-time-code mismatch.' );
+        if ( empty($response['moowoodle_one_time_code']) || !hash_equals($passkey, $response['moowoodle_one_time_code']) ) {
+            throw new moodle_exception('Unauthorized access, one-time-code mismatch.');
         }
 
-        if ( $response[ 'sskey' ] != md5( get_config( 'auth_moowoodle', 'encryptkey') ) ) {
-            throw new moodle_exception( 'Unauthorized access, sskey mismatch.' );
+        $expected_sskey = hash_hmac('sha256', $passkey, get_config('auth_moowoodle', 'encryptkey'));
+
+        if ( empty($response['sskey']) || !hash_equals($expected_sskey, $response['sskey']) ) {
+            throw new moodle_exception('Unauthorized access, sskey mismatch.');
         }
-        
-        if ( $response[ 'status' ] == 'success' ) {
+
+        if ( $response['status'] == 'success' ) {
             $user->loggedin = true;
             $user->site = $CFG->wwwroot;
-            unset_user_preference( 'auth_forcepasswordchange', $user );
+            unset_user_preference('auth_forcepasswordchange', $user);
             complete_user_login($user);
         }
 
-        if ( $requestdata[ 'redirect_url' ] ) {
-            $SESSION->wantsurl = $requestdata[ 'redirect_url' ];
+        if ( !empty($requestdata['redirect_url']) && parse_url($requestdata['redirect_url'], PHP_URL_HOST) === parse_url($CFG->wwwroot, PHP_URL_HOST) ) {
+            $SESSION->wantsurl = $requestdata['redirect_url'];
         }
     }
 }
 
-redirect( $SESSION->wantsurl );
+redirect($SESSION->wantsurl);
