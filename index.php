@@ -24,14 +24,20 @@
 
 require_once ( '../../config.php' );
 require_once ( $CFG->libdir . '/filelib.php' );
+require_once(__DIR__ . '/lib.php');
 
 $SESSION->wantsurl = $CFG->wwwroot . '/';
 
 $passkey = optional_param( 'passkey', '', PARAM_RAW );
 
 if ( $passkey ) {
-    $requestdata = base64_decode( $passkey );
-    $requestdata = json_decode( $requestdata, true );
+    $sso_key = get_config('auth_moowoodle', 'encryptkey');
+
+    $requestdata = moowoodle_decrypt_data($passkey, $sso_key);
+
+    if (false === $requestdata) {
+        throw new moodle_exception('Invalid SSO token.');
+    }
 
     // Get timestamp.
     $timestamp = $requestdata['timestamp'];
@@ -50,6 +56,8 @@ if ( $passkey ) {
 
         $curl = new curl();
 
+        $request_token = bin2hex(random_bytes(32));
+
         // Prepare request data.
         $reqdata = [
             'action'        => 'login_verify',
@@ -60,13 +68,22 @@ if ( $passkey ) {
             'timestamp'     => $requestdata['timestamp'],
             'course_id'     => $requestdata['course_id'],
             'user_id'       => $requestdata['wp_user_id'],
-            'one_time_code' => $passkey,
+            'nonce'         => $requestdata['nonce'],
+            'request_token' => $request_token,
         ];
+
+        $encrypted_request = moowoodle_encrypt_data($reqdata, $sso_key);
+
+        if (false === $encrypted_request) {
+            throw new moodle_exception('Unable to encrypt SSO request.');
+        }
 
         // Send request to wordpress server.
         $response = $curl->post(
             $requesturl,
-            $reqdata,
+            [
+                'payload' => $encrypted_request,
+            ],
             [
                 'RETURNTRANSFER' => 1,
                 'TIMEOUT'        => 100,
@@ -83,14 +100,8 @@ if ( $passkey ) {
             throw new moodle_exception('Unauthorized access, contact with site admin.');
         }
 
-        if ( empty($response['moowoodle_one_time_code']) || !hash_equals($passkey, $response['moowoodle_one_time_code']) ) {
-            throw new moodle_exception('Unauthorized access, one-time-code mismatch.');
-        }
-
-        $expected_sskey = hash_hmac('sha256', $passkey, get_config('auth_moowoodle', 'encryptkey'));
-
-        if ( empty($response['sskey']) || !hash_equals($expected_sskey, $response['sskey']) ) {
-            throw new moodle_exception('Unauthorized access, sskey mismatch.');
+        if ( empty($response['request_token']) || ! hash_equals( $request_token, $response['request_token'] ) ) {
+            throw new moodle_exception( 'Unauthorized access, request-token mismatch.');
         }
 
         if ( $response['status'] == 'success' ) {
