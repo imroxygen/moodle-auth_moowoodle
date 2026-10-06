@@ -73,6 +73,14 @@ class general_form extends moodleform {
         );
         $mform->addElement('static', 'extendedusernamechars_desc', '', get_string('req_extendedchars_desc', 'auth_moowoodle'));
 
+        $mform->addElement(
+            'advcheckbox',
+            'enableauth',
+            get_string('req_enableauth', 'auth_moowoodle'),
+            get_string('recommendedyes', 'auth_moowoodle')
+        );
+        $mform->addElement('static', 'enableauth_desc', '', get_string('req_enableauth_desc', 'auth_moowoodle'));
+
         $buttonarray = [
             $mform->createElement('submit', 'savesettings', get_string('save', 'auth_moowoodle')),
             $mform->createElement('submit', 'saveandcontinue', get_string('saveandcontinue', 'auth_moowoodle')),

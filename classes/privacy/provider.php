@@ -35,7 +35,7 @@ use core_privacy\local\request\userlist;
  * Privacy Subsystem implementation for auth_moowoodle.
  *
  * This plugin keeps no personal data of its own in the database: it has no custom
- * tables, and the only user data it touches (username, email, name, password) lives
+ * tables, and the only user data it touches (username, email, name) lives
  * in core's own user table. What it does do is exchange that data with the WordPress
  * site configured in its settings, for single sign-on and user synchronization, so
  * it reports that exchange as an external location link rather than as stored data.
@@ -62,7 +62,6 @@ class provider implements
             'email' => 'privacy:metadata:auth_moowoodle:email',
             'firstname' => 'privacy:metadata:auth_moowoodle:firstname',
             'lastname' => 'privacy:metadata:auth_moowoodle:lastname',
-            'password' => 'privacy:metadata:auth_moowoodle:password',
         ], 'privacy:metadata:auth_moowoodle:externalpurpose');
 
         return $collection;

@@ -15,13 +15,15 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * External library
+ * External function: auth_moowoodle_user_sync.
  *
  * @package    auth_moowoodle
  * @author     DualCube <admin@dualcube.com>
  * @copyright  2023 DualCube Team(https://dualcube.com)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
+namespace auth_moowoodle\external;
 
 use core_external\external_api;
 use core_external\external_function_parameters;
@@ -29,91 +31,15 @@ use core_external\external_single_structure;
 use core_external\external_value;
 
 /**
- * External library
- *
- * @package    auth_moowoodle
- * @author     DualCube <admin@dualcube.com>
- * @copyright  2023 DualCube Team(https://dualcube.com)
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * External function: auth_moowoodle_user_sync.
  */
-class auth_moowoodle_external extends external_api {
+class user_sync extends external_api {
     /**
      * Returns description of method parameters.
      *
      * @return external_function_parameters
      */
-    public static function auth_moowoodle_get_users_parameters(): external_function_parameters {
-        return new external_function_parameters([
-            'endid' => new external_value(PARAM_RAW, 'The last id to send the next batch of user data'),
-            'limit' => new external_value(PARAM_RAW, 'The limit for the batch of user data'),
-            'roles' => new external_value(PARAM_RAW, 'The role ids, a comma separated string of role ids'),
-        ]);
-    }
-
-    /**
-     * Get all users, batched by id, restricted to the given roles.
-     *
-     * @param int $endid
-     * @param int $limit
-     * @param string $roles Comma separated role ids.
-     * @return array
-     */
-    public static function auth_moowoodle_get_users($endid, $limit, $roles) {
-        global $DB;
-
-        if (!is_numeric($limit) || !is_numeric($endid)) {
-            return [
-                'status' => 'failed',
-                'data' => json_encode('Bad Request'),
-            ];
-        }
-
-        $limit = (int) $limit + 1;
-
-        // Sanitize role ids and prepare SQL placeholders.
-        $roleids = explode(',', $roles);
-        $roleids = array_map('intval', $roleids);
-
-        [$rolesql, $roleparams] = $DB->get_in_or_equal($roleids, SQL_PARAMS_NAMED, 'roleid');
-
-        $sql = "SELECT u.id, u.email, u.username, u.password, u.firstname, u.lastname
-                  FROM {user} u
-                  JOIN {role_assignments} ra ON u.id = ra.userid
-                 WHERE u.id > :endid
-                   AND u.deleted = 0
-                   AND ra.roleid $rolesql
-              ORDER BY u.id ASC";
-
-        $params = array_merge(['endid' => (int) $endid], $roleparams);
-
-        $records = $limit <= 0
-            ? $DB->get_records_sql($sql, $params)
-            : $DB->get_records_sql($sql, $params, 0, $limit);
-
-        return [
-            'status' => 'success',
-            'data' => json_encode($records),
-        ];
-    }
-
-    /**
-     * Returns description of method result value.
-     *
-     * @return external_single_structure
-     */
-    public static function auth_moowoodle_get_users_returns(): external_single_structure {
-        return new external_single_structure([
-            'status' => new external_value(PARAM_RAW, 'status: success if success'),
-            'data' => new external_value(PARAM_RAW, 'users: all user data'),
-        ]);
-    }
-
-    /**
-     * Returns description of method parameters.
-     *
-     * @return external_function_parameters
-     */
-    public static function auth_moowoodle_user_sync_parameters(): external_function_parameters {
+    public static function execute_parameters(): external_function_parameters {
         return new external_function_parameters([
             'userdata' => new external_value(PARAM_RAW, 'WordPress user data'),
             'setting' => new external_value(PARAM_RAW, 'Sync setting information from WordPress'),
@@ -128,10 +54,10 @@ class auth_moowoodle_external extends external_api {
      * @param string $setting JSON encoded list of fields WordPress is allowed to sync.
      * @return array
      */
-    public static function auth_moowoodle_user_sync($userdata, $setting) {
+    public static function execute($userdata, $setting) {
         // Validate input parameters.
         $params = self::validate_parameters(
-            self::auth_moowoodle_user_sync_parameters(),
+            self::execute_parameters(),
             [
                 'userdata' => $userdata,
                 'setting' => $setting,
@@ -192,7 +118,6 @@ class auth_moowoodle_external extends external_api {
         $moodleuserdata->email = clean_param($wpuserdata['email'], PARAM_EMAIL);
 
         self::apply_username($moodleuserdata, $wpuserdata, $syncsettings, $isnewuser);
-        self::apply_password($moodleuserdata, $wpuserdata, $syncsettings, $isnewuser);
         self::apply_namefield($moodleuserdata, $wpuserdata, $syncsettings, $isnewuser, 'firstname');
         self::apply_namefield($moodleuserdata, $wpuserdata, $syncsettings, $isnewuser, 'lastname');
 
@@ -203,6 +128,7 @@ class auth_moowoodle_external extends external_api {
             user_update_user($moodleuserdata, false, false);
             $userid = $moodleuserdata->id;
         } else {
+            $moodleuserdata->auth = 'moowoodle';
             $userid = user_create_user($moodleuserdata, false, false);
             $response['created'] = true;
         }
@@ -232,30 +158,6 @@ class auth_moowoodle_external extends external_api {
     }
 
     /**
-     * Set the password hash from WordPress data, if allowed or the account is new.
-     *
-     * Only accepted when it looks like a WordPress-style bcrypt/SHA-2 hash
-     * ('$6$rounds=' prefix); anything else is silently left untouched.
-     *
-     * @param \stdClass $moodleuserdata
-     * @param array $wpuserdata
-     * @param array $syncsettings
-     * @param bool $isnewuser
-     */
-    private static function apply_password(
-        \stdClass $moodleuserdata,
-        array $wpuserdata,
-        array $syncsettings,
-        bool $isnewuser
-    ): void {
-        if ((in_array('password', $syncsettings) && $wpuserdata['password'] != null) || $isnewuser) {
-            if (strpos($wpuserdata['password'], '$6$rounds=') === 0) {
-                $moodleuserdata->password = $wpuserdata['password'];
-            }
-        }
-    }
-
-    /**
      * Set a name field (firstname/lastname) from WordPress data, if allowed or the account is new.
      *
      * @param \stdClass $moodleuserdata
@@ -281,7 +183,7 @@ class auth_moowoodle_external extends external_api {
      *
      * @return external_single_structure
      */
-    public static function auth_moowoodle_user_sync_returns(): external_single_structure {
+    public static function execute_returns(): external_single_structure {
         return new external_single_structure([
             'status' => new external_value(PARAM_RAW, 'status: success if success'),
             'data' => new external_value(PARAM_RAW, 'Moodle user id'),

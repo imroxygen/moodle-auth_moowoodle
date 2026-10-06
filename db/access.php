@@ -33,4 +33,12 @@ $capabilities = [
         'archetypes' => [],
         'clonepermissionsfrom' => 'moodle/site:config',
     ],
+
+    'auth/moowoodle:exportusers' => [
+        'riskbitmask' => RISK_PERSONAL,
+        'captype' => 'read',
+        'contextlevel' => CONTEXT_SYSTEM,
+        'archetypes' => [],
+        'clonepermissionsfrom' => 'moodle/site:config',
+    ],
 ];

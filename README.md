@@ -48,7 +48,7 @@ https://dualcube.com/docs/moowoodle-set-up-guide/
 * Single sign-on from WordPress into Moodle using a shared secret key and a short-lived,
   signed login link.
 * Two-way user synchronization: WordPress can create or update Moodle users (username,
-  email, name, and — when supplied — password), matched by email.
+  email and name), matched by email. Passwords are never synchronised.
 * A batched user-export endpoint, restricted to a chosen set of roles, for WordPress to pull
   existing Moodle users.
 * A guided setup wizard that checks prerequisites, creates the Moodle web service and access

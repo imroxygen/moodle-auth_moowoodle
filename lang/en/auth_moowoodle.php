@@ -23,6 +23,11 @@
  */
 
 $string['pluginname'] = 'MooWoodle Connect';
+
+// Capabilities.
+$string['moowoodle:syncusers'] = 'Synchronise Moodle users with the MooWoodle WordPress plugin';
+$string['moowoodle:exportusers'] = 'Export Moodle user profile data to the MooWoodle WordPress plugin';
+
 $string['moowoodle_plugin_message'] = 'It should be same with the wordpress plugin';
 $string['key'] = 'SSO secret Key';
 $string['wpsiteurl'] = 'Wordpress Site URL';
@@ -42,7 +47,6 @@ $string['privacy:metadata:auth_moowoodle:username'] = 'The username, sent to and
 $string['privacy:metadata:auth_moowoodle:email'] = 'The user\'s email address, sent to and received from the WordPress site to keep both accounts in sync.';
 $string['privacy:metadata:auth_moowoodle:firstname'] = 'The user\'s first name, received from the WordPress site to keep the Moodle account in sync.';
 $string['privacy:metadata:auth_moowoodle:lastname'] = 'The user\'s last name, received from the WordPress site to keep the Moodle account in sync.';
-$string['privacy:metadata:auth_moowoodle:password'] = 'A hashed password, received from the WordPress site so the same credentials work on both sites.';
 
 // Settings page.
 $string['settings_intro'] = 'Connect this site to the MooWoodle WordPress plugin. Use the setup wizard for a guided, step-by-step configuration.';
@@ -73,9 +77,11 @@ $string['req_webservices_desc'] = 'Web services must be enabled so the MooWoodle
 $string['req_restprotocol'] = 'Enable REST protocol';
 $string['req_restprotocol_desc'] = 'The MooWoodle WordPress plugin communicates using the REST web service protocol.';
 $string['req_passwordpolicy'] = 'Password policy';
-$string['req_passwordpolicy_desc'] = 'If enabled, user passwords will be checked against the password policy configured under Site administration > Security. Leaving this off avoids conflicts when WordPress supplies its own passwords.';
+$string['req_passwordpolicy_desc'] = 'If enabled, user passwords will be checked against the password policy configured under Site administration > Security. Leaving this off avoids conflicts with accounts created from WordPress.';
 $string['req_extendedchars'] = 'Allow extended characters in usernames';
 $string['req_extendedchars_desc'] = 'Allows usernames created from WordPress to include characters beyond the Moodle default (alphanumeric, underscore, hyphen, period, at symbol).';
+$string['req_enableauth'] = 'Enable MooWoodle authentication';
+$string['req_enableauth_desc'] = 'Enables "MooWoodle Connect" as an authentication method under Site administration > Plugins > Authentication. Single sign-on and real-time user sync only work while it is enabled.';
 $string['requirement_ok'] = 'Requirement met';
 $string['requirement_missing'] = 'Requirement not met';
 $string['fixthis'] = 'Fix this';
@@ -109,8 +115,31 @@ $string['webservice_siteurl'] = 'Site URL';
 $string['webservice_update'] = 'Update web service';
 $string['webservice_nouser'] = 'No eligible user found. The selected user needs the "moodle/webservice:createtoken" capability.';
 
-// Setup wizard: Web Service step, additional function grants.
+// Setup wizard: Synchronization step, additional function grants.
 $string['synchronization_intro'] = 'Choose which additional web service functions the MooWoodle WordPress plugin is allowed to call. The functions required by this plugin are always enabled. Only enable functions the WordPress site actually needs — each one grants real access to Moodle data. Checking a box grants that function immediately; unchecking it here does not revoke access already granted — remove a function from Site administration > Server > Web services > External services if needed.';
+$string['syncgroup_readonly'] = 'Read-only functions';
+$string['syncgroup_mutating'] = 'Data-changing functions';
+$string['syncgroup_mutating_desc'] = 'These functions let the WordPress site create, modify, or delete Moodle data. Enable only what it actually needs, one function at a time.';
+$string['syncfunc_core_webservice_get_site_info'] = 'core_webservice_get_site_info - get basic Moodle site information';
+$string['syncfunc_core_course_get_categories'] = 'core_course_get_categories - get course categories';
+$string['syncfunc_core_course_get_courses'] = 'core_course_get_courses - get courses';
+$string['syncfunc_core_course_get_courses_by_field'] = 'core_course_get_courses_by_field - get courses by field';
+$string['syncfunc_core_user_get_users'] = 'core_user_get_users - get user accounts';
+$string['syncfunc_core_cohort_get_cohorts'] = 'core_cohort_get_cohorts - get cohorts';
+$string['syncfunc_core_group_get_course_groups'] = 'core_group_get_course_groups - get course groups';
+$string['syncfunc_core_user_create_users'] = 'core_user_create_users - create new Moodle user accounts';
+$string['syncfunc_core_user_update_users'] = 'core_user_update_users - update existing Moodle user accounts';
+$string['syncfunc_core_user_delete_users'] = 'core_user_delete_users - delete Moodle user accounts (destructive)';
+$string['syncfunc_enrol_manual_enrol_users'] = 'enrol_manual_enrol_users - enrol users into courses';
+$string['syncfunc_enrol_manual_unenrol_users'] = 'enrol_manual_unenrol_users - unenrol users from courses (destructive)';
+$string['syncfunc_core_cohort_add_cohort_members'] = 'core_cohort_add_cohort_members - add users to cohorts';
+$string['syncfunc_core_cohort_delete_cohort_members'] = 'core_cohort_delete_cohort_members - remove users from cohorts (destructive)';
+$string['syncfunc_core_group_create_groups'] = 'core_group_create_groups - create course groups';
+$string['syncfunc_core_group_add_group_members'] = 'core_group_add_group_members - add users to groups';
+$string['syncfunc_core_group_delete_group_members'] = 'core_group_delete_group_members - remove users from groups (destructive)';
+$string['synchronization_requirednote_heading'] = 'Note: The following web service functions are automatically added and managed by the MooWoodle authentication plugin. They are required for user synchronization and do not need to be selected manually on this page:';
+$string['synchronization_requiredfunction_get_users'] = 'auth_moowoodle_get_users — Get user data.';
+$string['synchronization_requiredfunction_user_sync'] = 'auth_moowoodle_user_sync — Sync user data with WordPress or an external source.';
 
 // Setup wizard: Summary step.
 $string['summary_intro'] = 'Review the configuration below, then copy the connection details into the MooWoodle WordPress plugin settings.';
@@ -131,6 +160,7 @@ $string['connectionok'] = 'Reachable';
 $string['checkmoredetails'] = 'Check the Wordpress Site step for details.';
 
 // SSO login endpoint errors.
+$string['ssoauthdisabled'] = 'Single sign-on is unavailable because the MooWoodle Connect authentication method is not enabled on this site.';
 $string['ssoinvalidtoken'] = 'Invalid SSO token.';
 $string['ssoencryptfailed'] = 'Unable to encrypt the SSO request.';
 $string['ssounauthorized'] = 'Unauthorized access, contact your site administrator.';

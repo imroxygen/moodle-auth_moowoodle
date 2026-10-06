@@ -30,6 +30,7 @@ use auth_moowoodle\local\setup_wizard;
 use auth_moowoodle\local\settings_handler;
 use auth_moowoodle\settings\connection_form;
 use auth_moowoodle\settings\general_form;
+use auth_moowoodle\settings\synchronization_form;
 use auth_moowoodle\settings\webservice_form;
 use core\context\system as context_system;
 
@@ -55,99 +56,19 @@ $PAGE->set_url($pageurl);
 $PAGE->set_title(get_string('setupwizard', 'auth_moowoodle'));
 $PAGE->set_heading(get_string('setupwizard', 'auth_moowoodle'));
 
-// Small "Copy" button behaviour for the read-only site URL / token fields.
-$copiedlabel = json_encode(get_string('copied', 'auth_moowoodle'));
-$copyjs = "document.addEventListener('click', function(event) {\n" .
-    "    var button = event.target.closest('.auth-moowoodle-copy');\n" .
-    "    if (!button) {\n" .
-    "        return;\n" .
-    "    }\n" .
-    "    var target = document.getElementById(button.getAttribute('data-copy-target'));\n" .
-    "    if (!target) {\n" .
-    "        return;\n" .
-    "    }\n" .
-    "    var text = 'value' in target ? target.value : target.textContent;\n" .
-    "    if (navigator.clipboard && navigator.clipboard.writeText) {\n" .
-    "        navigator.clipboard.writeText(text);\n" .
-    "    } else {\n" .
-    "        target.select();\n" .
-    "        document.execCommand('copy');\n" .
-    "    }\n" .
-    "    if (!button.dataset.originalLabel) {\n" .
-    "        button.dataset.originalLabel = button.textContent;\n" .
-    "    }\n" .
-    "    clearTimeout(button.moowoodleCopyTimeout);\n" .
-    "    button.textContent = {$copiedlabel};\n" .
-    "    button.moowoodleCopyTimeout = setTimeout(function() {\n" .
-    "        button.textContent = button.dataset.originalLabel;\n" .
-    "    }, 2000);\n" .
-    "});";
-$PAGE->requires->js_init_code($copyjs, true);
+// Small "Copy" button behaviour for the read-only site URL / token fields. Safe to
+// load on every step: it's a single delegated click listener, and does nothing unless
+// a ".auth-moowoodle-copy" button is actually present on the page.
+$PAGE->requires->js_call_amd('auth_moowoodle/setup_wizard', 'initCopyButtons');
 
 // Refresh the Web Service step's Token list when the service or user dropdown changes,
 // via a small JSON fetch, instead of reloading the page. No page navigation means no
 // "leave this page?" prompt from Moodle's unsaved-changes warning, and the "Name for
 // the Web Service" field's own show/hide already happens client-side via hideIf().
-$ajaxurl = json_encode((new moodle_url('/auth/moowoodle/wizard_ajax.php'))->out(false));
-$tokenplaceholder = json_encode(get_string('webservice_selecttoken', 'auth_moowoodle'));
-$reloadjs = <<<JS
-(function() {
-    var serviceselect = document.getElementById('auth_moowoodle_serviceid');
-    var userselect = document.getElementById('id_userid');
-    var tokenselect = document.getElementById('auth_moowoodle_token');
-    var button = document.getElementById('id_updateservice');
-
-    if (!serviceselect || !tokenselect) {
-        return;
-    }
-
-    var refreshTokens = function() {
-        if (serviceselect.value === '') {
-            return;
-        }
-
-        var params = new URLSearchParams({
-            sesskey: M.cfg.sesskey,
-            serviceid: serviceselect.value,
-            userid: userselect ? userselect.value : 0
-        });
-
-        fetch({$ajaxurl} + '?' + params.toString(), {credentials: 'same-origin'})
-            .then(function(response) {
-                return response.json();
-            })
-            .then(function(data) {
-                tokenselect.innerHTML = '';
-
-                var placeholder = document.createElement('option');
-                placeholder.value = '';
-                placeholder.textContent = {$tokenplaceholder};
-                tokenselect.appendChild(placeholder);
-
-                Object.keys(data.tokens).forEach(function(token) {
-                    var option = document.createElement('option');
-                    option.value = token;
-                    option.textContent = data.tokens[token];
-                    option.selected = (token === data.selectedtoken);
-                    tokenselect.appendChild(option);
-                });
-
-                if (button) {
-                    button.value = data.buttonlabel;
-                }
-            })
-            .catch(function() {
-                // Leave the current token list as-is on a network error.
-            });
-    };
-
-    serviceselect.addEventListener('change', refreshTokens);
-    if (userselect) {
-        userselect.addEventListener('change', refreshTokens);
-    }
-})();
-JS;
-$PAGE->requires->js_init_code($reloadjs, true);
+if ($step === 'webservice') {
+    $ajaxurl = (new moodle_url('/auth/moowoodle/wizard_ajax.php'))->out(false);
+    $PAGE->requires->js_call_amd('auth_moowoodle/setup_wizard', 'initWebserviceStep', [$ajaxurl]);
+}
 
 // Simple GET+sesskey "continue" actions (steps with nothing to submit).
 if (data_submitted() && optional_param('continuestep', 0, PARAM_BOOL)) {
@@ -168,10 +89,11 @@ $content = '';
 switch ($step) {
     case 'requirements':
         $form = new general_form($pageurl);
+        $notification = '';
 
         if ($data = $form->get_data()) {
             settings_handler::save_general_settings($data);
-            $content .= $OUTPUT->notification(get_string('settingssaved', 'auth_moowoodle'), 'success');
+            $notification = $OUTPUT->notification(get_string('settingssaved', 'auth_moowoodle'), 'success');
 
             if (!empty($data->saveandcontinue)) {
                 setup_wizard::mark_step_complete($step);
@@ -185,16 +107,22 @@ switch ($step) {
                 'restprotocol' => in_array('rest', $protocols, true),
                 'passwordpolicy' => (bool) $CFG->passwordpolicy,
                 'extendedusernamechars' => (bool) $CFG->extendedusernamechars,
+                // Enabled by default until the wizard has been run at least once.
+                'enableauth' => get_config('auth_moowoodle', 'setup_progress') ? is_enabled_auth('moowoodle') : true,
             ]);
         }
 
-        $content .= $OUTPUT->heading(get_string('step_requirements', 'auth_moowoodle'), 3);
-        $content .= html_writer::tag('p', get_string('requirements_intro', 'auth_moowoodle'));
-        $content .= $form->render();
+        $content = $OUTPUT->render_from_template('auth_moowoodle/step', [
+            'heading' => get_string('step_requirements', 'auth_moowoodle'),
+            'intro' => get_string('requirements_intro', 'auth_moowoodle'),
+            'notification' => $notification,
+            'formhtml' => $form->render(),
+        ]);
         break;
 
     case 'connection':
         $form = new connection_form($pageurl);
+        $notification = '';
 
         if ($data = $form->get_data()) {
             $wpsiteurl = rtrim(trim($data->wpsiteurl), '/');
@@ -205,22 +133,28 @@ switch ($step) {
 
             if (!empty($data->testconnection)) {
                 $result = settings_handler::test_connection($wpsiteurl);
-                $content .= $OUTPUT->notification($result['message'], $result['success'] ? 'success' : 'warning');
+                $notification = $OUTPUT->notification($result['message'], $result['success'] ? 'success' : 'warning');
             } else if (!empty($data->saveandcontinue)) {
                 setup_wizard::mark_step_complete($step);
                 redirect(new moodle_url('/auth/moowoodle/setup_wizard.php', ['step' => setup_wizard::get_next_step($step)]));
             }
         } else {
+            // Leave both fields blank when nothing has been configured yet - neither
+            // should ever show a converted falsy value or an auto-generated value the
+            // admin didn't ask for. An existing saved value is always preserved.
             $form->set_data((object) [
-                'wpsiteurl' => get_config('auth_moowoodle', 'wpsiteurl'),
-                'encryptkey' => get_config('auth_moowoodle', 'encryptkey') ?: settings_handler::generate_secret_key(),
+                'wpsiteurl' => get_config('auth_moowoodle', 'wpsiteurl') ?: '',
+                'encryptkey' => get_config('auth_moowoodle', 'encryptkey') ?: '',
                 'timelimit' => get_config('auth_moowoodle', 'timelimit') ?: 60,
             ]);
         }
 
-        $content .= $OUTPUT->heading(get_string('step_connection', 'auth_moowoodle'), 3);
-        $content .= html_writer::tag('p', get_string('connection_intro', 'auth_moowoodle'));
-        $content .= $form->render();
+        $content = $OUTPUT->render_from_template('auth_moowoodle/step', [
+            'heading' => get_string('step_connection', 'auth_moowoodle'),
+            'intro' => get_string('connection_intro', 'auth_moowoodle'),
+            'notification' => $notification,
+            'formhtml' => $form->render(),
+        ]);
         break;
 
     case 'webservice':
@@ -251,18 +185,21 @@ switch ($step) {
         // without any submit button's name/value, so it never reaches this branch.
         $realsubmit = optional_param('updateservice', '', PARAM_RAW) !== '';
         $justcreated = false;
+        $notification = '';
 
         if ($realsubmit && ($data = $form->get_data())) {
-            // Grant every known function automatically; the admin isn't asked to pick.
-            settings_handler::save_sync_functions(settings_handler::get_selectable_sync_functions());
-
+            // Optional functions (beyond the two this plugin always needs) are granted
+            // only via the explicit, per-function opt-in on the Synchronization step -
+            // never automatically here. A brand new service starts with just the
+            // mandatory functions; get_enabled_sync_functions() already returns those
+            // (plus whatever the admin has separately opted into) when applied below.
             $result = settings_handler::create_or_update_service(
                 (int) $data->serviceid,
                 (int) $data->userid,
                 $data->newservicename ?? ''
             );
 
-            $content .= $OUTPUT->notification($result['message'], $result['success'] ? 'success' : 'error');
+            $notification = $OUTPUT->notification($result['message'], $result['success'] ? 'success' : 'error');
 
             if ($result['success']) {
                 setup_wizard::mark_step_complete($step);
@@ -324,12 +261,75 @@ switch ($step) {
             'token' => $selectedtoken,
         ]);
 
-        $content .= $OUTPUT->heading(get_string('step_webservice', 'auth_moowoodle'), 3);
-        $content .= html_writer::tag('p', get_string('webservice_intro', 'auth_moowoodle'));
-        $content .= $form->render();
-
         $nexturl = new moodle_url('/auth/moowoodle/setup_wizard.php', ['step' => setup_wizard::get_next_step($step)]);
-        $content .= $OUTPUT->single_button($nexturl, get_string('next'), 'get');
+
+        $content = $OUTPUT->render_from_template('auth_moowoodle/step', [
+            'heading' => get_string('step_webservice', 'auth_moowoodle'),
+            'intro' => get_string('webservice_intro', 'auth_moowoodle'),
+            'notification' => $notification,
+            'formhtml' => $form->render(),
+            'extra' => $OUTPUT->single_button($nexturl, get_string('next'), 'get'),
+        ]);
+        break;
+
+    case 'synchronization':
+        $readonlyfunctions = settings_handler::READONLY_SYNC_FUNCTIONS;
+        $mutatingfunctions = settings_handler::MUTATING_SYNC_FUNCTIONS;
+
+        $form = new synchronization_form($pageurl, [
+            'readonly' => $readonlyfunctions,
+            'mutating' => $mutatingfunctions,
+        ]);
+
+        $notification = '';
+
+        if ($data = $form->get_data()) {
+            // Only functions the admin explicitly checked are granted - nothing here
+            // is selected by default, and unchecking a box does not by itself revoke
+            // access already granted (see synchronization_intro).
+            $selected = [];
+
+            foreach (array_merge($readonlyfunctions, $mutatingfunctions) as $functionname) {
+                if (!empty($data->$functionname)) {
+                    $selected[] = $functionname;
+                }
+            }
+
+            settings_handler::save_sync_functions($selected);
+            $notification = $OUTPUT->notification(get_string('settingssaved', 'auth_moowoodle'), 'success');
+
+            if (!empty($data->saveandcontinue)) {
+                setup_wizard::mark_step_complete($step);
+                redirect(new moodle_url('/auth/moowoodle/setup_wizard.php', ['step' => setup_wizard::get_next_step($step)]));
+            }
+        } else {
+            $enabled = settings_handler::get_enabled_sync_functions();
+            $defaults = [];
+
+            foreach (array_merge($readonlyfunctions, $mutatingfunctions) as $functionname) {
+                $defaults[$functionname] = in_array($functionname, $enabled, true) ? 1 : 0;
+            }
+
+            $form->set_data((object) $defaults);
+        }
+
+        // Purely informational - the two functions this plugin always needs are never
+        // shown as checkboxes above, so make it clear why they're missing from the list.
+        $requirednote = $OUTPUT->notification(
+            get_string('synchronization_requirednote_heading', 'auth_moowoodle') . html_writer::alist([
+                get_string('synchronization_requiredfunction_get_users', 'auth_moowoodle'),
+                get_string('synchronization_requiredfunction_user_sync', 'auth_moowoodle'),
+            ]),
+            'info'
+        );
+
+        $content = $OUTPUT->render_from_template('auth_moowoodle/step', [
+            'heading' => get_string('step_synchronization', 'auth_moowoodle'),
+            'intro' => get_string('synchronization_intro', 'auth_moowoodle'),
+            'notification' => $notification,
+            'formhtml' => $form->render(),
+            'extra' => $requirednote,
+        ]);
         break;
 
     case 'summary':
@@ -339,30 +339,27 @@ switch ($step) {
             ? settings_handler::test_connection($summary['wordpressurl'])
             : ['success' => false, 'message' => get_string('testconnection_invalidurl', 'auth_moowoodle')];
 
-        $content .= $OUTPUT->heading(get_string('step_summary', 'auth_moowoodle'), 3);
-        $content .= html_writer::tag('p', get_string('summary_intro', 'auth_moowoodle'));
-
         $statuscell = static function (bool $ok) use ($OUTPUT): string {
             $label = get_string($ok ? 'enabled' : 'disabled', 'auth_moowoodle');
 
             return $OUTPUT->pix_icon($ok ? 'i/valid' : 'i/invalid', $label) . ' ' . $label;
         };
 
-        $content .= $OUTPUT->heading(get_string('summary_general_heading', 'auth_moowoodle'), 4);
-
-        $generaltable = new html_table();
-        $generaltable->attributes['class'] = 'table table-sm auth-moowoodle-summary-table';
-        $generaltable->data = [
-            [get_string('req_restprotocol', 'auth_moowoodle'), $statuscell($summary['restprotocol'])],
-            [get_string('req_webservices', 'auth_moowoodle'), $statuscell($summary['webservices'])],
-            [get_string('req_passwordpolicy', 'auth_moowoodle'), $statuscell($summary['passwordpolicy'])],
-            [get_string('req_extendedchars', 'auth_moowoodle'), $statuscell($summary['extendedusernamechars'])],
-            [get_string('summary_webservicefunctions', 'auth_moowoodle'), $statuscell($summary['webservicefunctions'])],
-            [get_string('summary_capability', 'auth_moowoodle'), $statuscell($summary['capability'])],
+        $generalrows = [
+            ['label' => get_string('req_restprotocol', 'auth_moowoodle'), 'value' => $statuscell($summary['restprotocol'])],
+            ['label' => get_string('req_webservices', 'auth_moowoodle'), 'value' => $statuscell($summary['webservices'])],
+            ['label' => get_string('req_passwordpolicy', 'auth_moowoodle'), 'value' => $statuscell($summary['passwordpolicy'])],
+            [
+                'label' => get_string('req_extendedchars', 'auth_moowoodle'),
+                'value' => $statuscell($summary['extendedusernamechars']),
+            ],
+            ['label' => get_string('req_enableauth', 'auth_moowoodle'), 'value' => $statuscell($summary['authenabled'])],
+            [
+                'label' => get_string('summary_webservicefunctions', 'auth_moowoodle'),
+                'value' => $statuscell($summary['webservicefunctions']),
+            ],
+            ['label' => get_string('summary_capability', 'auth_moowoodle'), 'value' => $statuscell($summary['capability'])],
         ];
-        $content .= html_writer::table($generaltable);
-
-        $content .= $OUTPUT->heading(get_string('summary_connection_heading', 'auth_moowoodle'), 4);
 
         $connectionstepurl = new moodle_url('/auth/moowoodle/setup_wizard.php', ['step' => 'connection']);
 
@@ -376,31 +373,43 @@ switch ($step) {
             return $value !== '' ? s($value) : $notset;
         };
 
-        $connectiontable = new html_table();
-        $connectiontable->attributes['class'] = 'table table-sm auth-moowoodle-summary-table';
-        $connectiontable->data = [
-            [get_string('summary_moodleurl', 'auth_moowoodle'), s($summary['moodleurl'])],
-            [get_string('summary_webservicename', 'auth_moowoodle'), $displayvalue($summary['webservicename'])],
-            [get_string('webservice_token_label', 'auth_moowoodle'), $displayvalue($summary['token'])],
-            [get_string('summary_wordpressurl', 'auth_moowoodle'), $displayvalue($summary['wordpressurl'])],
-            [get_string('summary_connectionstatus', 'auth_moowoodle'), $connectionstatus],
-            [get_string('summary_langcode', 'auth_moowoodle'), s($summary['langcode'])],
+        $connectionrows = [
+            ['label' => get_string('summary_moodleurl', 'auth_moowoodle'), 'value' => s($summary['moodleurl'])],
+            [
+                'label' => get_string('summary_webservicename', 'auth_moowoodle'),
+                'value' => $displayvalue($summary['webservicename']),
+            ],
+            ['label' => get_string('webservice_token_label', 'auth_moowoodle'), 'value' => $displayvalue($summary['token'])],
+            [
+                'label' => get_string('summary_wordpressurl', 'auth_moowoodle'),
+                'value' => $displayvalue($summary['wordpressurl']),
+            ],
+            ['label' => get_string('summary_connectionstatus', 'auth_moowoodle'), 'value' => $connectionstatus],
+            ['label' => get_string('summary_langcode', 'auth_moowoodle'), 'value' => s($summary['langcode'])],
         ];
-        $content .= html_writer::table($connectiontable);
-        $content .= html_writer::tag('p', get_string('summary_copy_note', 'auth_moowoodle'));
 
         $settingsurl = new moodle_url('/admin/settings.php', ['section' => 'manageauths']);
-        $content .= $OUTPUT->single_button($settingsurl, get_string('gotosettings', 'auth_moowoodle'), 'get');
+        $restarturl = new moodle_url('/auth/moowoodle/setup_wizard.php', ['step' => $step, 'restartwizard' => 1]);
 
         setup_wizard::mark_step_complete($step);
 
-        $restarturl = new moodle_url('/auth/moowoodle/setup_wizard.php', ['step' => $step, 'restartwizard' => 1]);
-        $content .= $OUTPUT->single_button($restarturl, get_string('redosetup', 'auth_moowoodle'), 'post');
+        $content = $OUTPUT->render_from_template('auth_moowoodle/summary', [
+            'heading' => get_string('step_summary', 'auth_moowoodle'),
+            'intro' => get_string('summary_intro', 'auth_moowoodle'),
+            'generalheading' => get_string('summary_general_heading', 'auth_moowoodle'),
+            'generalrows' => $generalrows,
+            'connectionheading' => get_string('summary_connection_heading', 'auth_moowoodle'),
+            'connectionrows' => $connectionrows,
+            'copynote' => get_string('summary_copy_note', 'auth_moowoodle'),
+            'gotosettingsbutton' => $OUTPUT->single_button($settingsurl, get_string('gotosettings', 'auth_moowoodle'), 'get'),
+            'restartbutton' => $OUTPUT->single_button($restarturl, get_string('redosetup', 'auth_moowoodle'), 'post'),
+        ]);
         break;
 }
 
 echo $OUTPUT->header();
-echo setup_wizard::render_progress($step);
+$tabdata = setup_wizard::get_tabs();
+echo $OUTPUT->tabtree($tabdata['tabs'], $step, $tabdata['inactive']);
 echo $OUTPUT->box_start('generalbox auth-moowoodle-setup-wizard');
 echo $content;
 echo $OUTPUT->box_end();

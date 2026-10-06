@@ -37,19 +37,26 @@ require_sesskey();
 
 $context = context_system::instance();
 $PAGE->set_context($context);
-require_capability('moodle/webservice:createtoken', $context);
+require_capability('moodle/site:config', $context);
 
 $serviceid = required_param('serviceid', PARAM_INT);
 $userid = optional_param('userid', 0, PARAM_INT);
 
-$tokens = settings_handler::get_tokens_for_service($serviceid);
+// Only the MooWoodle service this wizard created is ever exposed, and only the
+// token issued to the selected user - never other users' or other services' tokens.
+$mooservice = (int) get_config('auth_moowoodle', 'webservice_id');
+if ($serviceid !== $mooservice) {
+    $serviceid = 0;
+}
 
+$tokens = [];
 $selectedtoken = '';
 if ($serviceid > 0 && $userid > 0) {
     $existingtoken = settings_handler::get_existing_token($serviceid, $userid);
 
-    if ($existingtoken && array_key_exists($existingtoken->token, $tokens)) {
+    if ($existingtoken) {
         $selectedtoken = $existingtoken->token;
+        $tokens = [$selectedtoken => $selectedtoken];
     }
 }
 

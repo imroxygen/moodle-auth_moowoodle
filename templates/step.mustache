@@ -1,0 +1,44 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template auth_moowoodle/step
+
+    A single setup wizard step: a heading, an introduction paragraph, an
+    optional notification, the step's form, and optional trailing content
+    (e.g. a "Next" button for steps with nothing to submit).
+
+    Context variables required for this template:
+    * heading - plain text step heading.
+    * intro - plain text introduction paragraph.
+    * notification - pre-rendered notification HTML, or empty.
+    * formhtml - pre-rendered moodleform HTML.
+    * extra - pre-rendered trailing HTML (e.g. a button), or empty.
+
+    Example context (json):
+    {
+        "heading": "Web Service",
+        "intro": "Create or reuse an external service.",
+        "notification": "",
+        "formhtml": "<form>...</form>",
+        "extra": ""
+    }
+}}
+<h3>{{heading}}</h3>
+<p>{{intro}}</p>
+{{{notification}}}
+{{{formhtml}}}
+{{{extra}}}

@@ -35,6 +35,10 @@ $SESSION->wantsurl = $CFG->wwwroot . '/';
 $passkey = optional_param('passkey', '', PARAM_RAW);
 
 if ($passkey) {
+    if (!is_enabled_auth('moowoodle')) {
+        throw new moodle_exception('ssoauthdisabled', 'auth_moowoodle');
+    }
+
     $ssokey = get_config('auth_moowoodle', 'encryptkey');
 
     $requestdata = \auth_moowoodle\local\crypto::decrypt($passkey, $ssokey);
@@ -53,6 +57,14 @@ if ($passkey) {
 
     if ($timedif >= 0 && $timedif < get_config('auth_moowoodle', 'timelimit') * 60 && $userexist) {
         $user = get_complete_user_data('id', $requestdata['user_id']);
+
+        // Only accounts provisioned for this plugin's auth method may sign in via SSO;
+        // suspended accounts, site administrators and other auth methods are refused.
+        if (
+            !$user || !empty($user->suspended) || !is_enabled_auth($user->auth) || is_siteadmin($user)
+        ) {
+            throw new moodle_exception('ssounauthorized', 'auth_moowoodle');
+        }
 
         // Get wordpress request url.
         $requesturl = get_config('auth_moowoodle', 'wpsiteurl') . '/?rest_route=/moowoodle/v1/sso';

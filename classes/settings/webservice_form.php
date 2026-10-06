@@ -108,7 +108,11 @@ class webservice_form extends moodleform {
                     'token',
                     '',
                     $tokenoptions,
-                    ['id' => 'auth_moowoodle_token', 'style' => 'min-width: 28em;']
+                    [
+                        'id' => 'auth_moowoodle_token',
+                        'class' => 'auth-moowoodle-token-select',
+                        'data-placeholder' => get_string('webservice_selecttoken', 'auth_moowoodle'),
+                    ]
                 ),
                 $mform->createElement('html', $this->copy_button('auth_moowoodle_token')),
             ],
@@ -160,6 +164,7 @@ class webservice_form extends moodleform {
                 'type' => 'button',
                 'class' => 'btn btn-secondary btn-sm auth-moowoodle-copy ml-2',
                 'data-copy-target' => $targetid,
+                'data-copied-label' => get_string('copied', 'auth_moowoodle'),
             ]
         );
     }

@@ -84,12 +84,13 @@ class auth_plugin_moowoodle extends auth_plugin_base {
     }
 
     /**
-     * URL for changing the user's password, if any.
+     * URL for changing the user's password, if any. Null means Moodle's own
+     * change password page is used.
      *
-     * @return void
+     * @return moodle_url|null
      */
     public function change_password_url() {
-        return;
+        return null;
     }
 
     /**

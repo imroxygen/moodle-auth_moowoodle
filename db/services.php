@@ -26,18 +26,14 @@ defined('MOODLE_INTERNAL') || die();
 
 $functions = [
     'auth_moowoodle_get_users' => [
-        'classpath'     => 'auth/moowoodle/externallib.php',
-        'classname'     => 'auth_moowoodle_external',
-        'methodname'    => 'auth_moowoodle_get_users',
+        'classname'     => 'auth_moowoodle\external\get_users',
         'description'   => 'Get user data',
-        'type'          => 'write',
-        'capabilities'  => 'moodle/user:create,moodle/user:update',
+        'type'          => 'read',
+        'capabilities'  => 'auth/moowoodle:exportusers',
     ],
 
     'auth_moowoodle_user_sync' => [
-        'classpath'     => 'auth/moowoodle/externallib.php',
-        'classname'     => 'auth_moowoodle_external',
-        'methodname'    => 'auth_moowoodle_user_sync',
+        'classname'     => 'auth_moowoodle\external\user_sync',
         'description'   => 'Sync user data with WordPress or external source',
         'type'          => 'write',
         'capabilities'  => 'moodle/user:create,moodle/user:update',
